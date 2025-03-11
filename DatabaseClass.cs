@@ -1,0 +1,37 @@
+﻿
+using MySql.Data.MySqlClient;
+using System.Security.Cryptography.X509Certificates;
+
+namespace edemBack
+{
+    public class DatabaseClass
+    {
+        internal MySqlConnection connection;
+        public DatabaseClass()
+        {
+            string host = "127.0.0.1"; // Имя хоста
+            string port = "3306";
+            string database = "edem_back"; // Имя базы данных
+            string user = "root"; // Имя пользователя
+            string password = ""; // Пароль пользователя
+
+            string Connect = "server=" + host + ";port=" + port + ";username=" + user + ";password=" + password + ";database=" + database + ";";
+
+            this.connection = new MySqlConnection(Connect);
+        }
+        public void openConnection()
+        {
+            if (connection.State == System.Data.ConnectionState.Closed)
+                connection.Open();
+        }
+        public void closeConnection()
+        {
+            if (connection.State == System.Data.ConnectionState.Open)
+                connection.Close();
+        }
+        public MySqlConnection getConnection()
+        {
+            return connection;
+        }
+    }
+}

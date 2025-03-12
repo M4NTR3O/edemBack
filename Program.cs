@@ -1,5 +1,7 @@
 using edemBack.IFunction;
 using Org.BouncyCastle.Utilities;
+using System.ComponentModel.DataAnnotations;
+using System.Drawing.Printing;
 
 namespace edemBack
 {
@@ -7,6 +9,7 @@ namespace edemBack
     {
         public static void Main(string[] args)
         {
+            List<Models.Object> objects = new List<Models.Object>();
             var builder = WebApplication.CreateBuilder(args);
             var app = builder.Build();
             daoClass dao = new daoClass();
@@ -24,7 +27,7 @@ namespace edemBack
                 var objectsQuery = objects.AsQueryable();
                 if (objects.Count == 0)
                 {
-                    return Results.NotFound("Not found objects");
+                    return Results.NoContent();
                 }
                 //filters
                 //office_id
@@ -147,6 +150,29 @@ namespace edemBack
                 }
             });
 
+            app.MapPost("/Object", (Models.Object _object) =>
+            {
+                var validationContext = new ValidationContext(_object);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(
+                _object, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        ICreateFunction.createObject(_object);
+                        return Results.Created();
+                    }
+                    catch(Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
             
             app.Run();
         }

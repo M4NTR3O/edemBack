@@ -1,7 +1,10 @@
 using edemBack.IFunction;
+using edemBack.Models;
+using Org.BouncyCastle.Asn1.Ocsp;
 using Org.BouncyCastle.Utilities;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing.Printing;
+using System.Text.Json;
 
 namespace edemBack
 {
@@ -150,12 +153,12 @@ namespace edemBack
                 }
             });
 
+            //Create Object
             app.MapPost("/Object", (Models.Object _object) =>
             {
                 var validationContext = new ValidationContext(_object);
                 var validationResults = new List<ValidationResult>();
-                var isValid = Validator.TryValidateObject(
-                _object, validationContext, validationResults, true);
+                var isValid = Validator.TryValidateObject(_object, validationContext, validationResults, true);
                 if (isValid)
                 {
                     try
@@ -173,7 +176,139 @@ namespace edemBack
                     return Results.BadRequest();
                 }
             });
-            
+
+            //Create Worker
+            app.MapPost("/Worker", (Models.Worker worker) =>
+            {
+                var validationContext = new ValidationContext(worker);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(worker, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        ICreateFunction.createWorker(worker);
+                        return Results.Created();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+
+            //Create Office
+            app.MapPost("/Office", (Models.Office office) =>
+            {
+                var validationContext = new ValidationContext(office);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(office, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        ICreateFunction.createOffice(office);
+                        return Results.Created();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+
+            //Create Role
+            app.MapPost("/Role", (Models.Role role) =>
+            {
+                var validationContext = new ValidationContext(role);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(role, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        ICreateFunction.createRole(role);
+                        return Results.Created();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+
+            //Create Request
+            app.MapPost("/Request", (Models.Request request) =>
+            {
+                var validationContext = new ValidationContext(request);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(request, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        ICreateFunction.createRequest(request);
+                        return Results.Created();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+
+            //Auth
+             app.MapPost("/Auth", (AuthRequest request) =>
+             {
+                var validationContext = new ValidationContext(request);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(request, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        int id = IGetFunction.getAuth(request.Login, request.Password);
+                        if (id == -2)
+                        {
+                            return Results.BadRequest("Нет пользователя");
+                        }
+                        else if (id == -1)
+                        {
+                            return Results.BadRequest("Неверный пароль");
+                        }
+                        else
+                        {
+                            var workers = IGetFunction.getWorker(id);
+                            return Results.Accepted(null, workers);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem(ex.ToString());
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+
             app.Run();
         }
     }

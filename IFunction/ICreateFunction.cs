@@ -57,7 +57,7 @@ namespace edemBack.IFunction
             database.closeConnection();
         }
 
-        //Create filial
+        //Create Office
         public static void createOffice(Models.Office office)
         {
             database.openConnection();

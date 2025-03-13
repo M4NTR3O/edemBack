@@ -131,5 +131,32 @@ namespace edemBack.IFunction
         //Get additional material
 
         //Get Access user
+        public static int getAuth(string login, string password)
+        {
+            database.openConnection();
+            MySqlCommand mysql_query = database.connection.CreateCommand();
+            mysql_query.CommandText = @$"SELECT id_worker, login, password FROM Worker WHERE login = {login};";
+            mysql_query.Connection = database.connection;
+            MySqlDataReader reader = mysql_query.ExecuteReader();
+            if (reader.Read())
+            {  
+                if (reader[2].ToString() == password)
+                {
+                    int id = Convert.ToInt32(reader[0].ToString()!);
+                    database.closeConnection();
+                    return id;
+                }
+                else
+                {
+                    database.closeConnection();
+                    return -1;
+                }
+            }
+            else
+            {
+                database.closeConnection();
+                return -2;
+            }
+        }
     }
 }

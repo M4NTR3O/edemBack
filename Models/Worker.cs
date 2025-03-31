@@ -11,7 +11,6 @@
         public DateTime Birthday { get; set; }
         public int Id_Role { get; set; }
         public int Id_Office { get; set; }
-        public string? Login { get; set; }
         public string? Password { get; set; }
     }
 }

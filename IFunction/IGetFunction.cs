@@ -70,7 +70,7 @@ namespace edemBack.IFunction
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = "SELECT `id_worker`, `surname`, `name`, `fatherName`, `phoneNumber`, `email`, `birthday`, `role_id`, `office_id`, `login`, `password` FROM `Worker`;";
+            mysql_query.CommandText = "SELECT `id_worker`, `surname`, `name`, `fatherName`, `phoneNumber`, `email`, `birthday`, `role_id`, `office_id`, `password` FROM `Worker`;";
             mysql_query.Connection = database.connection;
             MySqlDataReader reader = mysql_query.ExecuteReader();
             List<Worker> workers = new List<Worker>();
@@ -87,8 +87,7 @@ namespace edemBack.IFunction
                     Birthday = DateTime.Parse(reader[6].ToString()!),
                     Id_Role = int.Parse(reader[7].ToString()!),
                     Id_Office = int.Parse(reader[8].ToString()!),
-                    Login = reader[9].ToString()!,
-                    Password = reader[10].ToString()!
+                    Password = reader[9].ToString()!
                 };
                 workers.Add(worker);
             }
@@ -100,7 +99,7 @@ namespace edemBack.IFunction
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = $"SELECT `id_worker`, `surname`, `name`, `fatherName`, `phoneNumber`, `email`, `birthday`, `role_id`, `office_id`, `login`, `password` FROM `Worker` WHERE `id_worker`={id};";
+            mysql_query.CommandText = $"SELECT `id_worker`, `surname`, `name`, `fatherName`, `phoneNumber`, `email`, `birthday`, `role_id`, `office_id`, `password` FROM `Worker` WHERE `id_worker`={id};";
             mysql_query.Connection = database.connection;
             MySqlDataReader reader = mysql_query.ExecuteReader();
             List<Worker> workers = new List<Worker>();
@@ -117,8 +116,7 @@ namespace edemBack.IFunction
                     Birthday = DateTime.Parse(reader[6].ToString()!),
                     Id_Role = int.Parse(reader[7].ToString()!),
                     Id_Office = int.Parse(reader[8].ToString()!),
-                    Login = reader[9].ToString()!,
-                    Password = reader[10].ToString()!
+                    Password = reader[9].ToString()!
                 };
                 workers.Add(worker);
             }
@@ -181,6 +179,30 @@ namespace edemBack.IFunction
                 database.closeConnection();
                 return -2;
             }
+        }
+
+        //Get Booking
+        public static List<Models.Booking> getAllBooking()
+        {
+            database.openConnection();
+            MySqlCommand mysql_query = database.connection.CreateCommand();
+            mysql_query.CommandText = "SELECT `id_booking`, `object_id`, `date_start`, `date_end` FROM `Object_Booking`;";
+            mysql_query.Connection = database.connection;
+            MySqlDataReader reader = mysql_query.ExecuteReader();
+            List<Models.Booking> booking = new List<Models.Booking>();
+            while (reader.Read())
+            {
+                Models.Booking oneBooking = new Models.Booking
+                {
+                    Id_Booking = int.Parse(reader[0].ToString()!),
+                    Object_id = int.Parse(reader[1].ToString()!),
+                    Date_Start = DateTime.Parse(reader[2].ToString()!),
+                    Date_End = DateTime.Parse(reader[3].ToString()!)
+                };
+                booking.Add(oneBooking);
+            }
+            database.closeConnection();
+            return booking;
         }
     }
 }

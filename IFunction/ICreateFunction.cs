@@ -34,9 +34,9 @@ namespace edemBack.IFunction
         {
             database.openConnection();
             string query = @"INSERT INTO Object 
-                        (surname, name, fatherName, phoneNumber, email, birthday, role_id, office_id, login, password) 
+                        (surname, name, fatherName, phoneNumber, email, birthday, role_id, office_id, password) 
                         VALUES 
-                        (@Surname, @Name, @Fathername, @PhoneNumber, @Email, @Birthday, @Id_Role, @Id_Office, @Login, @Password);";
+                        (@Surname, @Name, @Fathername, @PhoneNumber, @Email, @Birthday, @Id_Role, @Id_Office, @Password);";
 
             using (var command = new MySqlCommand(query, database.connection))
             {
@@ -49,7 +49,6 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@Birthday", worker.Birthday);
                 command.Parameters.AddWithValue("@Id_Role", worker.Id_Role);
                 command.Parameters.AddWithValue("@Id_Office", worker.Id_Office);
-                command.Parameters.AddWithValue("@Login", worker.Login);
                 command.Parameters.AddWithValue("@Password", worker.Password);
 
                 command.ExecuteNonQuery();
@@ -134,7 +133,24 @@ namespace edemBack.IFunction
             database.closeConnection();
         }
 
-        //create pre-order
+        //create booking
+        public static void createBooking(Models.Booking booking)
+        {
+            database.openConnection();
+            string query = @"INSERT INTO Object_Booking 
+                        (object_id, date_start, date_end) 
+                        VALUES 
+                        (@Object_Id, @Date_Start, @Date_End);";
 
+            using (var command = new MySqlCommand(query, database.connection))
+            {
+                command.Parameters.AddWithValue("@Object_Id", booking.Object_id);
+                command.Parameters.AddWithValue("@Date_Start", booking.Date_Start);
+                command.Parameters.AddWithValue("@Urgency", booking.Date_End);
+
+                command.ExecuteNonQuery();
+            }
+            database.closeConnection();
+        }
     }
 }

@@ -12,7 +12,6 @@ namespace edemBack
     {
         public static void Main(string[] args)
         {
-            List<Models.Object> objects = new List<Models.Object>();
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddCors(options =>
@@ -384,7 +383,7 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            })
+            });
 
             //Update Worker
             app.MapPut("/UpdateWorker", (Models.Worker worker) =>
@@ -486,6 +485,41 @@ namespace edemBack
             app.MapPatch("/UpdatePassword/{id: int}", (int id, string password) =>
             {
                 IUpdateFunction.UpdatePassword(id, password);
+                return Results.NoContent();
+            });
+
+            //Delete Worker
+            app.MapDelete("/Worker/{id:int}", (int id) =>
+            {
+                IDeleteFunctions.DeleteWorker(id);
+                return Results.NoContent();
+            });
+
+            //Delete Object
+            app.MapDelete("/Object/{id:int}", (int id) =>
+            {
+                IDeleteFunctions.DeleteObject(id);
+                return Results.NoContent();
+            });
+
+            //Delete Booking
+            app.MapDelete("/Booking/{id:int}", (int id) =>
+            {
+                IDeleteFunctions.DeleteBooking(id);
+                return Results.NoContent();
+            });
+
+            //Delete Office
+            app.MapDelete("/Office/{id:int}", (int id) =>
+            {
+                IDeleteFunctions.DeleteOffice(id);
+                return Results.NoContent();
+            });
+
+            //Delete Request
+            app.MapDelete("/Request/{id:int}", (int id) =>
+            {
+                IDeleteFunctions.DeleteRequest(id);
                 return Results.NoContent();
             });
 

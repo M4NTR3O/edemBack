@@ -5,7 +5,7 @@ namespace edemBack.IFunction
     public interface IDeleteFunctions: IConnection
     {
         //Delete Object
-        public void DeleteObject(int id)
+        public static void DeleteObject(int id)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
@@ -15,7 +15,7 @@ namespace edemBack.IFunction
             database.closeConnection();
         }
         //Delete Worker
-        public void DeleteWorker(int id)
+        public static void DeleteWorker(int id)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
@@ -25,7 +25,7 @@ namespace edemBack.IFunction
             database.closeConnection();
         }
         //Delete Office
-        public void DeleteOffice(int id)
+        public static void DeleteOffice(int id)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
@@ -35,7 +35,7 @@ namespace edemBack.IFunction
             database.closeConnection();
         }
         //Delete Booking
-        public void DeleteBooking(int id)
+        public static void DeleteBooking(int id)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
@@ -45,7 +45,7 @@ namespace edemBack.IFunction
             database.closeConnection();
         }
         //Delete Request
-        public void DeleteRequest(int id)
+        public static void DeleteRequest(int id)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();

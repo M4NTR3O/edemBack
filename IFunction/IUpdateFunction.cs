@@ -5,7 +5,7 @@ namespace edemBack.IFunction
     public interface IUpdateFunction: IConnection
     {
         //Update Request
-        public void UpdateRequest(Models.Request request)
+        public static void UpdateRequest(Models.Request request)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
@@ -15,7 +15,7 @@ namespace edemBack.IFunction
             database.closeConnection();
         }
         //Update Worker
-        public void UpdateWorker(Models.Worker worker)
+        public static void UpdateWorker(Models.Worker worker)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
@@ -27,17 +27,17 @@ namespace edemBack.IFunction
         }
 
         //Update Worker password
-        public void UpdatePassword(Models.Worker worker)
+        public static void UpdatePassword(int id, string password)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = $"UPDATE `Worker` SET password = {worker.Password} WHERE id_request = {worker.Id};";
+            mysql_query.CommandText = $"UPDATE `Worker` SET password = {password} WHERE id_request = {id};";
             mysql_query.Connection = database.connection;
             MySqlDataReader reader = mysql_query.ExecuteReader();
             database.closeConnection();
         }
         //Update Booking
-        public void UpdateBooking(Models.Booking booking)
+        public static void UpdateBooking(Models.Booking booking)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
@@ -47,7 +47,7 @@ namespace edemBack.IFunction
             database.closeConnection();
         }
         //Update Object
-        public void UpdateObject(Models.Object _object)
+        public static void UpdateObject(Models.Object _object)
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();

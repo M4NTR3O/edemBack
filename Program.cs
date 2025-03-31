@@ -166,6 +166,82 @@ namespace edemBack
                 }
             });
 
+            //Get All Requests
+            app.MapGet("/Requests", (HttpRequest request) =>
+            {
+                //parametrs filter (подумать над office_id)
+                bool urgency = false;
+                string? status = null;
+                //list item
+                var requests = IGetFunction.getAllRequest();
+                if (requests.Count == 0)
+                {
+                    return Results.NotFound("Not found requests");
+                }
+                var requestsQuery = requests.AsQueryable();
+                //filters
+                //status
+                if (request.Query.ContainsKey("Status"))
+                {
+                    status = request.Query["Status"];
+                    if (status != null)
+                    {
+                        requestsQuery = requestsQuery.Where(
+                            x => x.Status == status);
+                    }
+                }
+                if (request.Query.ContainsKey("Urgency"))
+                {
+                    var parsedUrgency = bool.TryParse(request.Query["Urgency"], out urgency);
+                    if (parsedUrgency)
+                    {
+                        requestsQuery = requestsQuery.Where(
+                            x => x.Urgency == urgency);
+                    }
+                }
+                //result list
+                var result = requestsQuery.ToList();
+                //check empty list
+                if (result.Count == 0)
+                {
+                    return Results.NotFound("Not found requests with that parametrs");
+                }
+                return Results.Ok(result);
+            });
+
+            //Get All Booking
+            app.MapGet("/Boocking", (HttpRequest request) =>
+            {
+                //filter
+                int office_id = -1;
+                //list item
+                var bookingList = IGetFunction.getAllBooking();
+                if (bookingList.Count == 0)
+                {
+                    return Results.NotFound("Not found booking");
+                }
+                var bookingQuery = bookingList.AsQueryable();
+                //filters
+                //office_id
+                if (request.Query.ContainsKey("Office_Id"))
+                {
+                    var parsedOffice_id = int.TryParse(request.Query["Office_Id"], out office_id);
+                    if (parsedOffice_id)
+                    {
+                        bookingQuery = bookingQuery.Where(
+                            x => IGetFunction.getObject(x.Object_id)[0].Office_Id == office_id);
+                    }
+                }
+                //result list
+                var result = bookingQuery.ToList();
+                //check empty list
+                if (result.Count == 0)
+                {
+                    return Results.NotFound("Not found bookings with that parametrs");
+                }
+                return Results.Ok(result);
+            });
+
             //Create Object
             app.MapPost("/Object", (Models.Object _object) =>
             {
@@ -286,6 +362,133 @@ namespace edemBack
                 }
             });
 
+            //Create Booking
+            app.MapPost("/Booking", (Models.Booking booking) =>
+            {
+                var validationContext = new ValidationContext(booking);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(booking, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        ICreateFunction.createBooking(booking);
+                        return Results.Created();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            })
+
+            //Update Worker
+            app.MapPut("/UpdateWorker", (Models.Worker worker) =>
+            {
+                var validationContext = new ValidationContext(worker);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(worker, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        IUpdateFunction.UpdateWorker(worker);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+
+            //Update Request
+            app.MapPut("/UpdateRequest", (Models.Request request) =>
+            {
+                var validationContext = new ValidationContext(request);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(request, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        IUpdateFunction.UpdateRequest(request);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+
+            //Update Booking
+            app.MapPut("/UpdateBooking", (Models.Booking booking) =>
+            {
+                var validationContext = new ValidationContext(booking);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(booking, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        IUpdateFunction.UpdateBooking(booking);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+
+            //Update Object
+            app.MapPut("/UpdateObject", (Models.Object _object) =>
+            {
+                var validationContext = new ValidationContext(_object);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(_object, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        IUpdateFunction.UpdateObject(_object);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+
+            //Update Worker password
+            app.MapPatch("/UpdatePassword/{id: int}", (int id, string password) =>
+            {
+                IUpdateFunction.UpdatePassword(id, password);
+                return Results.NoContent();
+            });
+
             //Auth
             app.MapPost("/Auth", (AuthRequest request) =>
              {
@@ -322,7 +525,6 @@ namespace edemBack
                 }
             });
 
-            //
 
             app.Run();
         }

@@ -149,7 +149,29 @@ namespace edemBack.IFunction
             database.closeConnection();
             return requests;
         }
-
+        //Get Booking
+        public static List<Models.Booking> getAllBooking()
+        {
+            database.openConnection();
+            MySqlCommand mysql_query = database.connection.CreateCommand();
+            mysql_query.CommandText = "SELECT `id_booking`, `object_id`, `date_start`, `date_end` FROM `Object_Booking`;";
+            mysql_query.Connection = database.connection;
+            MySqlDataReader reader = mysql_query.ExecuteReader();
+            List<Models.Booking> booking = new List<Models.Booking>();
+            while (reader.Read())
+            {
+                Models.Booking oneBooking = new Models.Booking
+                {
+                    Id_Booking = int.Parse(reader[0].ToString()!),
+                    Object_id = int.Parse(reader[1].ToString()!),
+                    Date_Start = DateTime.Parse(reader[2].ToString()!),
+                    Date_End = DateTime.Parse(reader[3].ToString()!)
+                };
+                booking.Add(oneBooking);
+            }
+            database.closeConnection();
+            return booking;
+        }
         //Get additional material
 
         //Get Access user
@@ -181,28 +203,6 @@ namespace edemBack.IFunction
             }
         }
 
-        //Get Booking
-        public static List<Models.Booking> getAllBooking()
-        {
-            database.openConnection();
-            MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = "SELECT `id_booking`, `object_id`, `date_start`, `date_end` FROM `Object_Booking`;";
-            mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
-            List<Models.Booking> booking = new List<Models.Booking>();
-            while (reader.Read())
-            {
-                Models.Booking oneBooking = new Models.Booking
-                {
-                    Id_Booking = int.Parse(reader[0].ToString()!),
-                    Object_id = int.Parse(reader[1].ToString()!),
-                    Date_Start = DateTime.Parse(reader[2].ToString()!),
-                    Date_End = DateTime.Parse(reader[3].ToString()!)
-                };
-                booking.Add(oneBooking);
-            }
-            database.closeConnection();
-            return booking;
-        }
+        
     }
 }

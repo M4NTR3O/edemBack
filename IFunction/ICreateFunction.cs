@@ -68,39 +68,32 @@ namespace edemBack.IFunction
 
             using (var command = new MySqlCommand(query, database.connection))
             {
-                command.Parameters.AddWithValue("@Street", (object?)office.Street ?? DBNull.Value);
-                command.Parameters.AddWithValue("@House", (object?)office.House ?? DBNull.Value);
+                command.Parameters.AddWithValue("@Street", office.Street);
+                command.Parameters.AddWithValue("@House", office.House);
 
                 command.ExecuteNonQuery();
             }
             database.closeConnection();
         }
-        //Create additional material
-        /*
-        public static void createAdditionalMaterial(Models.Additionally additionally)
+        //Create additional info
+        public static void createAdditional(Models.Additionally additionally)
         {
             database.openConnection();
-            string query = @"INSERT INTO Object 
-                        (office_id, street, house, apartment, rooms, status, area, kitchen, balcony) 
+            string query = @"INSERT INTO Additionally 
+                        (name_parametr, value, object_id) 
                         VALUES 
-                        (@Office, @Street, @House, @Apartment, @Rooms, @Status, @Area, @Kitchen, @Balcony);";
+                        (@Parametr, @Value, @ID_Object);";
 
             using (var command = new MySqlCommand(query, database.connection))
             {
-                command.Parameters.AddWithValue("@Office", additionally.Office_Id);
-                command.Parameters.AddWithValue("@Street", (object?)additionally.Street ?? DBNull.Value);
-                command.Parameters.AddWithValue("@House", (object?)_object.House ?? DBNull.Value);
-                command.Parameters.AddWithValue("@Apartment", (object?)_object.Apartment ?? DBNull.Value);
-                command.Parameters.AddWithValue("@Rooms", _object.Rooms);
-                command.Parameters.AddWithValue("@Status", (object?)_object.Status ?? DBNull.Value);
-                command.Parameters.AddWithValue("@Area", _object.Area);
-                command.Parameters.AddWithValue("@Kitchen", _object.Kitchen);
-                command.Parameters.AddWithValue("@Balcony", _object.Balcony);
+                command.Parameters.AddWithValue("@ID_Object", additionally.ID_object);
+                command.Parameters.AddWithValue("@Parametr", additionally.Parametr);
+                command.Parameters.AddWithValue("@Value", additionally.Value);
 
                 command.ExecuteNonQuery();
             }
             database.closeConnection();
-        }*/
+        }
         //create role
         public static void createRole(Models.Role role)
         {
@@ -112,8 +105,8 @@ namespace edemBack.IFunction
 
             using (var command = new MySqlCommand(query, database.connection))
             {
-                command.Parameters.AddWithValue("@Street", (object?)role.Name ?? DBNull.Value);
-                command.Parameters.AddWithValue("@House", role.Salary);
+                command.Parameters.AddWithValue("@Name", role.Name);
+                command.Parameters.AddWithValue("@Salary", role.Salary);
 
                 command.ExecuteNonQuery();
             }
@@ -133,12 +126,15 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@Role_Id", request.Role_Id);
                 command.Parameters.AddWithValue("@Worker_Id", (object?)request.Worker_Id ?? DBNull.Value);
                 command.Parameters.AddWithValue("@Object_Id", request.Object_Id);
-                command.Parameters.AddWithValue("@Status", (object?)request.Status ?? DBNull.Value);
+                command.Parameters.AddWithValue("@Status", request.Status);
                 command.Parameters.AddWithValue("@Urgency", Convert.ToInt32(request.Urgency));
 
                 command.ExecuteNonQuery();
             }
             database.closeConnection();
         }
+
+        //create pre-order
+
     }
 }

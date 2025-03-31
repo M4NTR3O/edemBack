@@ -14,7 +14,20 @@ namespace edemBack
         {
             List<Models.Object> objects = new List<Models.Object>();
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.WithOrigins("https://localhost:3000")
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+
             var app = builder.Build();
+
+            app.UseCors("AllowAll");
             daoClass dao = new daoClass();
 
             //GetAllObject and with filter
@@ -274,7 +287,7 @@ namespace edemBack
             });
 
             //Auth
-             app.MapPost("/Auth", (AuthRequest request) =>
+            app.MapPost("/Auth", (AuthRequest request) =>
              {
                 var validationContext = new ValidationContext(request);
                 var validationResults = new List<ValidationResult>();
@@ -308,6 +321,8 @@ namespace edemBack
                     return Results.BadRequest();
                 }
             });
+
+            //
 
             app.Run();
         }

@@ -127,6 +127,30 @@ namespace edemBack.IFunction
         }
 
         //Get Request with filter
+        public static List<Models.Request> getAllRequest()
+        {
+            database.openConnection();
+            MySqlCommand mysql_query = database.connection.CreateCommand();
+            mysql_query.CommandText = "SELECT `id_request`, `role_id`, `worker_id`, `object_id`, `status`, `urgency` FROM `Request`;";
+            mysql_query.Connection = database.connection;
+            MySqlDataReader reader = mysql_query.ExecuteReader();
+            List<Models.Request> requests = new List<Models.Request>();
+            while (reader.Read())
+            {
+                Models.Request oneRequest = new Models.Request
+                {
+                    Request_Id = int.Parse(reader[0].ToString()!),
+                    Role_Id = int.Parse(reader[1].ToString()!),
+                    Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
+                    Object_Id = int.Parse(reader[3].ToString()!),
+                    Status = reader[4].ToString()!,
+                    Urgency = bool.Parse(reader[5].ToString()!)
+                };
+                requests.Add(oneRequest);
+            }
+            database.closeConnection();
+            return requests;
+        }
 
         //Get additional material
 

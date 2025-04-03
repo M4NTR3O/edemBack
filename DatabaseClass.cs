@@ -24,10 +24,20 @@ namespace edemBack
             if (connection.State == System.Data.ConnectionState.Closed)
                 connection.Open();
         }
+        public async Task openAsyncConnection()
+        {
+            if (connection.State == System.Data.ConnectionState.Closed)
+                await connection.OpenAsync();
+        }
         public void closeConnection()
         {
             if (connection.State == System.Data.ConnectionState.Open)
                 connection.Close();
+        }
+        public async Task closeAsyncConnection()
+        {
+            if (connection.State == System.Data.ConnectionState.Open)
+                await connection.CloseAsync();
         }
         public MySqlConnection getConnection()
         {

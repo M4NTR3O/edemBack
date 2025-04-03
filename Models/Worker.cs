@@ -10,6 +10,7 @@
         public string? Email { get; set; }
         public DateTime Birthday { get; set; }
         public int Id_Role { get; set; }
+        //Добавить Название роли
         public int Id_Office { get; set; }
         public string? Password { get; set; }
     }

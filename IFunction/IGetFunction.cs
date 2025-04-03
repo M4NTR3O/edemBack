@@ -6,15 +6,15 @@ namespace edemBack.IFunction
     public interface IGetFunction: IConnection
     {
         //Get all object
-        public static List<Models.Object> getAllObject()
+        public static async Task<List<Models.Object>> getAllObject()
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
             mysql_query.CommandText = "SELECT `id_object`, `office_id`, `street`, `house`, `apartment`, `rooms`, `status`, `area`, `kitchen`, `balcony` FROM `Object`;";
             mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
+            var reader = await mysql_query.ExecuteReaderAsync();
             List<Models.Object> objects = new List<Models.Object>();
-            while (reader.Read())
+            while (await reader.ReadAsync())
             {
                 Models.Object oneObject = new Models.Object
                 {
@@ -31,7 +31,7 @@ namespace edemBack.IFunction
                 };
                 objects.Add(oneObject);
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
             return objects;
         }
 
@@ -125,28 +125,30 @@ namespace edemBack.IFunction
         }
 
         //Get Request with filter
-        public static List<Models.Request> getAllRequest()
+        public static async Task<List<Models.Request>> getAllRequest()
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
             mysql_query.CommandText = "SELECT `id_request`, `role_id`, `worker_id`, `object_id`, `status`, `urgency` FROM `Request`;";
             mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
             List<Models.Request> requests = new List<Models.Request>();
-            while (reader.Read())
+            using (var reader = await mysql_query.ExecuteReaderAsync())
             {
-                Models.Request oneRequest = new Models.Request
+                while (await reader.ReadAsync())
                 {
-                    Request_Id = int.Parse(reader[0].ToString()!),
-                    Role_Id = int.Parse(reader[1].ToString()!),
-                    Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
-                    Object_Id = int.Parse(reader[3].ToString()!),
-                    Status = reader[4].ToString()!,
-                    Urgency = bool.Parse(reader[5].ToString()!)
-                };
-                requests.Add(oneRequest);
+                    Models.Request oneRequest = new Models.Request
+                    {
+                        Request_Id = int.Parse(reader[0].ToString()!),
+                        Role_Id = int.Parse(reader[1].ToString()!),
+                        Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
+                        Object_Id = int.Parse(reader[3].ToString()!),
+                        Status = reader[4].ToString()!,
+                        Urgency = bool.Parse(reader[5].ToString()!)
+                    };
+                    requests.Add(oneRequest);
+                }
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
             return requests;
         }
         //Get Booking

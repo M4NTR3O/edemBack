@@ -1,5 +1,6 @@
 using edemBack.IFunction;
 using edemBack.Models;
+using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Asn1.Ocsp;
 using Org.BouncyCastle.Utilities;
 using System.ComponentModel.DataAnnotations;
@@ -12,6 +13,7 @@ namespace edemBack
     {
         public static void Main(string[] args)
         {
+
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddCors(options =>
@@ -27,10 +29,11 @@ namespace edemBack
             var app = builder.Build();
 
             app.UseCors("AllowAll");
+            app.UseMiddleware<RequestLoggingMiddleware>();
             daoClass dao = new daoClass();
 
             //GetAllObject and with filter
-            app.MapGet("/Objects", (HttpRequest request) =>
+            app.MapGet("/Objects", async (HttpRequest request) => 
             {
                 //filter parametrs
                 bool kitchen = false;
@@ -38,7 +41,7 @@ namespace edemBack
                 bool balcony = false;
                 int rooms = 0;
                 //list item
-                var objects = IGetFunction.getAllObject();
+                var objects = await IGetFunction.getAllObject();
                 var objectsQuery = objects.AsQueryable();
                 if (objects.Count == 0)
                 {
@@ -166,13 +169,14 @@ namespace edemBack
             });
 
             //Get All Requests
-            app.MapGet("/Requests", (HttpRequest request) =>
+            app.MapGet("/Requests", async (HttpRequest request) =>
             {
                 //parametrs filter (подумать над office_id)
                 bool urgency = false;
                 string? status = null;
                 //list item
-                var requests = IGetFunction.getAllRequest();
+                List<Models.Request> requests = await IGetFunction.getAllRequest();
+                
                 if (requests.Count == 0)
                 {
                     return Results.NotFound("Not found requests");
@@ -482,44 +486,44 @@ namespace edemBack
             });
 
             //Update Worker password
-            app.MapPatch("/UpdatePassword/{id: int}", (int id, string password) =>
+            /*app.MapPatch("/UpdatePassword/{id: int}", (int id, string password) =>
             {
                 IUpdateFunction.UpdatePassword(id, password);
                 return Results.NoContent();
-            });
+            });*/
 
             //Delete Worker
-            app.MapDelete("/Worker/{id:int}", (int id) =>
+            app.MapDelete("/Worker/{id:int}", async (int id) =>
             {
-                IDeleteFunctions.DeleteWorker(id);
+                await IDeleteFunctions.DeleteWorker(id);
                 return Results.NoContent();
             });
 
             //Delete Object
-            app.MapDelete("/Object/{id:int}", (int id) =>
+            app.MapDelete("/Object/{id:int}", async (int id) =>
             {
-                IDeleteFunctions.DeleteObject(id);
+                await IDeleteFunctions.DeleteObject(id);
                 return Results.NoContent();
             });
 
             //Delete Booking
-            app.MapDelete("/Booking/{id:int}", (int id) =>
+            app.MapDelete("/Booking/{id:int}", async (int id) =>
             {
-                IDeleteFunctions.DeleteBooking(id);
+                await IDeleteFunctions.DeleteBooking(id);
                 return Results.NoContent();
             });
 
             //Delete Office
-            app.MapDelete("/Office/{id:int}", (int id) =>
+            app.MapDelete("/Office/{id:int}", async (int id) =>
             {
-                IDeleteFunctions.DeleteOffice(id);
+                await IDeleteFunctions.DeleteOffice(id);
                 return Results.NoContent();
             });
 
             //Delete Request
-            app.MapDelete("/Request/{id:int}", (int id) =>
+            app.MapDelete("/Request/{id:int}", async (int id) =>
             {
-                IDeleteFunctions.DeleteRequest(id);
+                await IDeleteFunctions.DeleteRequest(id);
                 return Results.NoContent();
             });
 

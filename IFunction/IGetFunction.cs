@@ -36,15 +36,15 @@ namespace edemBack.IFunction
         }
 
         //Get one object
-        public static List<Models.Object> getObject(int id)
+        public static async Task<List<Models.Object>> getObject(int id)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
             mysql_query.CommandText = $"SELECT `id_object`, `office_id`, `street`, `house`, `apartment`, `rooms`, `status`, `area`, `kitchen`, `balcony` FROM `Object` WHERE `id_object` = {id};";
             mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
+            var reader = await mysql_query.ExecuteReaderAsync();
             List<Models.Object> objects = new List<Models.Object>();
-            while (reader.Read())
+            while (await reader.ReadAsync())
             {
                 Models.Object oneObject = new Models.Object
                 {
@@ -61,20 +61,20 @@ namespace edemBack.IFunction
                 };
                 objects.Add(oneObject);
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
             return objects;
         }
 
         //Get Workers
-        public static List<Worker> getAllWorker()
+        public static async Task<List<Worker>> getAllWorker()
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
             mysql_query.CommandText = "SELECT `id_worker`, `surname`, `name`, `fatherName`, `phoneNumber`, `email`, `birthday`, `role_id`, `office_id`, `password` FROM `Worker`;";
             mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
+            var reader = await mysql_query.ExecuteReaderAsync();
             List<Worker> workers = new List<Worker>();
-            while (reader.Read())
+            while (await reader.ReadAsync())
             {
                 Models.Worker worker = new Models.Worker
                 {
@@ -91,19 +91,19 @@ namespace edemBack.IFunction
                 };
                 workers.Add(worker);
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
             return workers;
         }
         //Get 1 worker
-        public static List<Worker> getWorker(int id)
+        public static async Task<List<Worker>> getWorker(int id)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
             mysql_query.CommandText = $"SELECT `id_worker`, `surname`, `name`, `fatherName`, `phoneNumber`, `email`, `birthday`, `role_id`, `office_id`, `password` FROM `Worker` WHERE `id_worker`={id};";
             mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
+            var reader = await mysql_query.ExecuteReaderAsync();
             List<Worker> workers = new List<Worker>();
-            while (reader.Read())
+            while (await reader.ReadAsync())
             {
                 Models.Worker worker = new Models.Worker
                 {
@@ -120,7 +120,7 @@ namespace edemBack.IFunction
                 };
                 workers.Add(worker);
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
             return workers;
         }
 
@@ -152,13 +152,13 @@ namespace edemBack.IFunction
             return requests;
         }
         //Get Booking
-        public static List<Models.Booking> getAllBooking()
+        public static async Task<List<Models.Booking>> getAllBooking()
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
             mysql_query.CommandText = "SELECT `id_booking`, `object_id`, `date_start`, `date_end` FROM `Object_Booking`;";
             mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
+            var reader = await mysql_query.ExecuteReaderAsync();
             List<Models.Booking> booking = new List<Models.Booking>();
             while (reader.Read())
             {
@@ -171,36 +171,59 @@ namespace edemBack.IFunction
                 };
                 booking.Add(oneBooking);
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
             return booking;
+        }
+
+        //Get Roles
+        public static async Task<List<Models.Role>> getAllRoles()
+        {
+            await database.openAsyncConnection();
+            MySqlCommand mysql_query = database.connection.CreateCommand();
+            mysql_query.CommandText = "SELECT `id_role`, `name`, `salary` FROM `Role`;";
+            mysql_query.Connection = database.connection;
+            var reader = await mysql_query.ExecuteReaderAsync();
+            List<Models.Role> roles = new List<Role>();
+            while(await reader.ReadAsync())
+            {
+                Models.Role oneRole = new Role
+                {
+                    Role_Id = int.Parse(reader[0].ToString()!),
+                    Name = reader[1].ToString()!,
+                    Salary = int.Parse(reader[2].ToString()!)
+                };
+                roles.Add(oneRole);
+            }
+            await database.closeAsyncConnection();
+            return roles;
         }
         //Get additional material
 
         //Get Access user
-        public static int getAuth(string login, string password)
+        public static async Task<int> getAuth(string login, string password)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
             mysql_query.CommandText = @$"SELECT id_worker, login, password FROM Worker WHERE login = {login};";
             mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
-            if (reader.Read())
+            var reader = await mysql_query.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
             {  
                 if (reader[2].ToString() == password)
                 {
                     int id = Convert.ToInt32(reader[0].ToString()!);
-                    database.closeConnection();
+                    await database.closeAsyncConnection();
                     return id;
                 }
                 else
                 {
-                    database.closeConnection();
+                    await database.closeAsyncConnection();
                     return -1;
                 }
             }
             else
             {
-                database.closeConnection();
+                await database.closeAsyncConnection();
                 return -2;
             }
         }

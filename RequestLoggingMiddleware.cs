@@ -23,8 +23,9 @@ namespace edemBack
             // Логируем входящий запрос
             context.Request.EnableBuffering(); // Позволяет читать тело запроса несколько раз
             var requestBody = await ReadRequestBody(context.Request);
-            _logger.LogInformation("➡ [Запрос] {Method} {Path} \nТело: {RequestBody}",
-                context.Request.Method, context.Request.Path, requestBody);
+            var queryString = GetQueryString(context.Request);
+            _logger.LogInformation("➡ [Запрос] {Method}{Path}{QueryString} \nТело: {RequestBody}",
+                context.Request.Method, context.Request.Path, queryString, requestBody);
 
             // Перехватываем ответ
             var originalBodyStream = context.Response.Body;
@@ -35,19 +36,26 @@ namespace edemBack
 
             stopwatch.Stop();
             var responseBody = await ReadResponseBody(context.Response);
-            _logger.LogInformation("⬅ [Ответ] {Method} {Path} \nСтатус: {StatusCode} ({ElapsedMilliseconds} ms) \nТело: {ResponseBody}",
-                context.Request.Method, context.Request.Path, context.Response.StatusCode, stopwatch.ElapsedMilliseconds, responseBody);
+            _logger.LogInformation("⬅ [Ответ] {Method} {Path}{QueryString} \nСтатус: {StatusCode} ({ElapsedMilliseconds} ms) \nТело: {ResponseBody}",
+                context.Request.Method, context.Request.Path, queryString, context.Response.StatusCode, stopwatch.ElapsedMilliseconds, responseBody);
 
             await responseBodyStream.CopyToAsync(originalBodyStream); // Возвращаем тело ответа
         }
 
         private async Task<string> ReadRequestBody(HttpRequest request)
         {
+            if (request.Method == HttpMethods.Get) return "GET-запрос без тела";
+
             request.Body.Position = 0;
             using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
             var body = await reader.ReadToEndAsync();
             request.Body.Position = 0; // Восстанавливаем позицию
             return string.IsNullOrWhiteSpace(body) ? "Пустое тело" : body;
+        }
+
+        private string GetQueryString(HttpRequest request)
+        {
+            return request.QueryString.HasValue ? request.QueryString.Value : "Нет параметров";
         }
 
         private async Task<string> ReadResponseBody(HttpResponse response)

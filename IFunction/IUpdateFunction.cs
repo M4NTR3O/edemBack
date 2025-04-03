@@ -4,6 +4,7 @@ namespace edemBack.IFunction
 {
     public interface IUpdateFunction: IConnection
     {
+        //Переписать как CREATE методы
         //Update Request
         public static void UpdateRequest(Models.Request request)
         {
@@ -20,7 +21,7 @@ namespace edemBack.IFunction
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
             mysql_query.CommandText = $"UPDATE `Worker` SET surname = {worker.Surname}, name = {worker.Name}, fatherName = {worker.Fathername}," +
-                $"phoneNumber = {worker.PhoneNumber}, email = {worker.Email}, role_id = {worker.Id_Role}, office_id = {worker.Id_Office}, password = {worker.Password} WHERE id_request = {worker.Id};";
+                $"phoneNumber = {worker.PhoneNumber}, email = {worker.Email}, role_id = {worker.Id_Role}, office_id = {worker.Id_Office}, password = {worker.Password} WHERE id_worker = {worker.Id};";
             mysql_query.Connection = database.connection;
             MySqlDataReader reader = mysql_query.ExecuteReader();
             database.closeConnection();
@@ -41,7 +42,7 @@ namespace edemBack.IFunction
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = $"UPDATE `Object_Booking` SET date_start = {booking.Date_Start}, date_start = {booking.Date_End} WHERE id_request = {booking.Id_Booking};";
+            mysql_query.CommandText = $"UPDATE `Object_Booking` SET date_start = {booking.Date_Start}, date_start = {booking.Date_End} WHERE id_booking = {booking.Id_Booking};";
             mysql_query.Connection = database.connection;
             MySqlDataReader reader = mysql_query.ExecuteReader();
             database.closeConnection();
@@ -51,7 +52,7 @@ namespace edemBack.IFunction
         {
             database.openConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = $"UPDATE `Object` SET balcony = {_object.Balcony}, status = {_object.Status}, kitchen = {_object.Kitchen},  WHERE id_request = {_object.Id};";
+            mysql_query.CommandText = $"UPDATE `Object` SET balcony = {_object.Balcony}, status = {_object.Status}, kitchen = {_object.Kitchen},  WHERE id_object = {_object.Id};";
             mysql_query.Connection = database.connection;
             MySqlDataReader reader = mysql_query.ExecuteReader();
             database.closeConnection();

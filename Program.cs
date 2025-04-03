@@ -6,6 +6,7 @@ using Org.BouncyCastle.Utilities;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing.Printing;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace edemBack
 {
@@ -97,9 +98,9 @@ namespace edemBack
             });
 
             //Get one object with ID
-            app.MapGet("/Object/{id:int}", (int id) =>
+            app.MapGet("/Object/{id:int}", async (int id) =>
             {
-                var objects = IGetFunction.getObject(id);
+                var objects = await IGetFunction.getObject(id);
                 if (objects.Count == 0)
                 {
                     return Results.NotFound("Not found object with that id");
@@ -111,13 +112,13 @@ namespace edemBack
             });
 
             //Get All Workers
-            app.MapGet("/Workers", (HttpRequest request) =>
+            app.MapGet("/Workers", async (HttpRequest request) =>
             {
                 //parametrs filter
                 int id_office = 0;
                 int id_role = 0;
                 //list item
-                var workers = IGetFunction.getAllWorker();
+                var workers = await IGetFunction.getAllWorker();
                 if (workers.Count == 0)
                 {
                     return Results.NotFound("Not found workers");
@@ -155,9 +156,9 @@ namespace edemBack
             });
 
             //Get One Worker with ID
-            app.MapGet("/Worker/{id:int}", (int id) =>
+            app.MapGet("/Worker/{id:int}", async (int id) =>
             {
-                var workers = IGetFunction.getWorker(id);
+                var workers = await IGetFunction.getWorker(id);
                 if (workers.Count == 0)
                 {
                     return Results.NotFound("Not found worker");
@@ -213,12 +214,12 @@ namespace edemBack
             });
 
             //Get All Booking
-            app.MapGet("/Boocking", (HttpRequest request) =>
+            app.MapGet("/Booking", async (HttpRequest request) =>
             {
                 //filter
                 int office_id = -1;
                 //list item
-                var bookingList = IGetFunction.getAllBooking();
+                var bookingList = await IGetFunction.getAllBooking();
                 if (bookingList.Count == 0)
                 {
                     return Results.NotFound("Not found booking");
@@ -231,8 +232,10 @@ namespace edemBack
                     var parsedOffice_id = int.TryParse(request.Query["Office_Id"], out office_id);
                     if (parsedOffice_id)
                     {
+                        var bookings = await bookingQuery.ToListAsync();
+                        var objects = await Task.WhenAll(bookings.Select(async x => await IGetFunction.getObject(x.Object_id)));
                         bookingQuery = bookingQuery.Where(
-                            x => IGetFunction.getObject(x.Object_id)[0].Office_Id == office_id);
+                            x => objects.First(o => o[0].Office_Id == office_id) != null);
                     }
                 }
                 //result list
@@ -243,6 +246,19 @@ namespace edemBack
                     return Results.NotFound("Not found bookings with that parametrs");
                 }
                 return Results.Ok(result);
+            });
+
+            app.MapGet("/Roles", async () =>
+            {
+                var roles = await IGetFunction.getAllRoles();
+                if (roles.Count == 0)
+                {
+                    return Results.NotFound("Not found roles");
+                }
+                else
+                {
+                    return Results.Ok(roles);
+                }
             });
 
             //Create Object
@@ -528,7 +544,7 @@ namespace edemBack
             });
 
             //Auth
-            app.MapPost("/Auth", (AuthRequest request) =>
+            app.MapPost("/Auth", async (AuthRequest request) =>
              {
                 var validationContext = new ValidationContext(request);
                 var validationResults = new List<ValidationResult>();
@@ -537,7 +553,7 @@ namespace edemBack
                 {
                     try
                     {
-                        int id = IGetFunction.getAuth(request.Login, request.Password);
+                        int id = await IGetFunction.getAuth(request.Login, request.Password);
                         if (id == -2)
                         {
                             return Results.BadRequest("Нет пользователя");

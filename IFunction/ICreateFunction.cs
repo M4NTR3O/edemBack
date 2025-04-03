@@ -32,28 +32,49 @@ namespace edemBack.IFunction
         //Create worker
         public static async Task createWorker(Models.Worker worker)
         {
-            await database.openAsyncConnection();
-            string query = @"INSERT INTO Object 
-                        (surname, name, fatherName, phoneNumber, email, birthday, role_id, office_id, password) 
-                        VALUES 
-                        (@Surname, @Name, @Fathername, @PhoneNumber, @Email, @Birthday, @Id_Role, @Id_Office, @Password);";
-
-            using (var command = new MySqlCommand(query, database.connection))
+            try
             {
-                command.Parameters.AddWithValue("@Surname", worker.Surname);
-                command.Parameters.AddWithValue("@Name", worker.Name);
-                command.Parameters.AddWithValue("@Fathername", worker.Fathername);
-                command.Parameters.AddWithValue("@PhoneNumber", worker.PhoneNumber);
-                command.Parameters.AddWithValue("@Email", worker.Email);
-                //Скорее всего проблема, протестировать
-                command.Parameters.AddWithValue("@Birthday", worker.Birthday.Date);
-                command.Parameters.AddWithValue("@Id_Role", worker.Id_Role);
-                command.Parameters.AddWithValue("@Id_Office", worker.Id_Office);
-                command.Parameters.AddWithValue("@Password", worker.Password);
+                await database.openAsyncConnection();
+                if (database.connection.State != System.Data.ConnectionState.Open)
+                {
+                    throw new Exception("Соединение не открылось!");
+                }
 
-                await command.ExecuteNonQueryAsync();
+                string query = @"INSERT INTO `Worker` 
+                         (surname, name, fatherName, phoneNumber, email, birthday, role_id, office_id, password) 
+                         VALUES 
+                         (@Surname, @Name, @Fathername, @PhoneNumber, @Email, @Birthday, @Id_Role, @Id_Office, @Password);";
+
+                using (var command = new MySqlCommand(query, database.connection))
+                {
+                    command.Parameters.AddWithValue("@Surname", worker.Surname);
+                    command.Parameters.AddWithValue("@Name", worker.Name);
+                    command.Parameters.AddWithValue("@Fathername", worker.Fathername);
+                    command.Parameters.AddWithValue("@PhoneNumber", worker.PhoneNumber);
+                    command.Parameters.AddWithValue("@Email", worker.Email);
+                    command.Parameters.Add("@Birthday", MySqlDbType.Date).Value = worker.Birthday.Date;
+                    command.Parameters.AddWithValue("@Id_Role", worker.Id_Role);
+                    command.Parameters.AddWithValue("@Id_Office", worker.Id_Office);
+                    command.Parameters.AddWithValue("@Password", worker.Password);
+
+                    await command.ExecuteNonQueryAsync();
+                }
             }
-            await database.closeAsyncConnection();
+            catch (MySqlException ex)
+            {
+                // Логгирование ошибки для диагностики
+                Console.WriteLine("MySQL Exception: " + ex.Message);
+                throw;
+            }
+            catch (ObjectDisposedException ex)
+            {
+                Console.WriteLine("ObjectDisposedException: " + ex.Message);
+                throw;
+            }
+            finally
+            {
+                await database.closeAsyncConnection();
+            }
         }
 
         //Create Office +

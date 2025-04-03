@@ -44,6 +44,16 @@ namespace edemBack.IFunction
             var reader = await mysql_query.ExecuteReaderAsync();
             await database.closeAsyncConnection();
         }
+        //Delete Role
+        public static async Task DeleteRole(int id)
+        {
+            await database.openAsyncConnection();
+            MySqlCommand mysql_query = database.connection.CreateCommand();
+            mysql_query.CommandText = $"DELETE FROM `Role` WHERE id_role= {id};";
+            mysql_query.Connection = database.connection;
+            var reader = await mysql_query.ExecuteReaderAsync();
+            await database.closeAsyncConnection();
+        }
         //Delete Request
         public static async Task DeleteRequest(int id)
         {

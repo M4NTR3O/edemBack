@@ -262,7 +262,7 @@ namespace edemBack
             });
 
             //Create Object
-            app.MapPost("/Object", (Models.Object _object) =>
+            app.MapPost("/Object", async (Models.Object _object) =>
             {
                 var validationContext = new ValidationContext(_object);
                 var validationResults = new List<ValidationResult>();
@@ -271,7 +271,7 @@ namespace edemBack
                 {
                     try
                     {
-                        ICreateFunction.createObject(_object);
+                        await ICreateFunction.createObject(_object);
                         return Results.Created();
                     }
                     catch(Exception ex)
@@ -286,7 +286,7 @@ namespace edemBack
             });
 
             //Create Worker
-            app.MapPost("/Worker", (Models.Worker worker) =>
+            app.MapPost("/Worker", async (Models.Worker worker) =>
             {
                 var validationContext = new ValidationContext(worker);
                 var validationResults = new List<ValidationResult>();
@@ -295,7 +295,7 @@ namespace edemBack
                 {
                     try
                     {
-                        ICreateFunction.createWorker(worker);
+                        await ICreateFunction.createWorker(worker);
                         return Results.Created();
                     }
                     catch (Exception ex)
@@ -310,7 +310,7 @@ namespace edemBack
             });
 
             //Create Office
-            app.MapPost("/Office", (Models.Office office) =>
+            app.MapPost("/Office", async (Models.Office office) =>
             {
                 var validationContext = new ValidationContext(office);
                 var validationResults = new List<ValidationResult>();
@@ -319,7 +319,7 @@ namespace edemBack
                 {
                     try
                     {
-                        ICreateFunction.createOffice(office);
+                        await ICreateFunction.createOffice(office);
                         return Results.Created();
                     }
                     catch (Exception ex)
@@ -334,7 +334,7 @@ namespace edemBack
             });
 
             //Create Role
-            app.MapPost("/Role", (Models.Role role) =>
+            app.MapPost("/Role", async (Models.Role role) =>
             {
                 var validationContext = new ValidationContext(role);
                 var validationResults = new List<ValidationResult>();
@@ -343,7 +343,7 @@ namespace edemBack
                 {
                     try
                     {
-                        ICreateFunction.createRole(role);
+                        await ICreateFunction.createRole(role);
                         return Results.Created();
                     }
                     catch (Exception ex)
@@ -358,7 +358,7 @@ namespace edemBack
             });
 
             //Create Request
-            app.MapPost("/Request", (Models.Request request) =>
+            app.MapPost("/Request", async (Models.Request request) =>
             {
                 var validationContext = new ValidationContext(request);
                 var validationResults = new List<ValidationResult>();
@@ -367,7 +367,7 @@ namespace edemBack
                 {
                     try
                     {
-                        ICreateFunction.createRequest(request);
+                        await ICreateFunction.createRequest(request);
                         return Results.Created();
                     }
                     catch (Exception ex)
@@ -382,7 +382,7 @@ namespace edemBack
             });
 
             //Create Booking
-            app.MapPost("/Booking", (Models.Booking booking) =>
+            app.MapPost("/Booking", async (Models.Booking booking) =>
             {
                 var validationContext = new ValidationContext(booking);
                 var validationResults = new List<ValidationResult>();
@@ -391,7 +391,33 @@ namespace edemBack
                 {
                     try
                     {
-                        ICreateFunction.createBooking(booking);
+                        await ICreateFunction.createBooking(booking);
+                        return Results.Created();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            });
+            //Create Additional
+            app.MapPost("/Additionally", async (List<Models.Additionally> additionally) =>
+            {
+                var validationContext = new ValidationContext(additionally);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(additionally, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        foreach(var additional in additionally)
+                        {
+                            await ICreateFunction.createAdditional(additional);
+                        }
                         return Results.Created();
                     }
                     catch (Exception ex)
@@ -406,7 +432,7 @@ namespace edemBack
             });
 
             //Update Worker
-            app.MapPut("/UpdateWorker", (Models.Worker worker) =>
+            app.MapPut("/UpdateWorker", async (Models.Worker worker) =>
             {
                 var validationContext = new ValidationContext(worker);
                 var validationResults = new List<ValidationResult>();
@@ -415,7 +441,7 @@ namespace edemBack
                 {
                     try
                     {
-                        IUpdateFunction.UpdateWorker(worker);
+                        await IUpdateFunction.UpdateWorker(worker);
                         return Results.NoContent();
                     }
                     catch (Exception ex)
@@ -430,7 +456,7 @@ namespace edemBack
             });
 
             //Update Request
-            app.MapPut("/UpdateRequest", (Models.Request request) =>
+            app.MapPut("/UpdateRequest", async (Models.Request request) =>
             {
                 var validationContext = new ValidationContext(request);
                 var validationResults = new List<ValidationResult>();
@@ -439,7 +465,7 @@ namespace edemBack
                 {
                     try
                     {
-                        IUpdateFunction.UpdateRequest(request);
+                        await IUpdateFunction.UpdateRequest(request);
                         return Results.NoContent();
                     }
                     catch (Exception ex)
@@ -540,6 +566,12 @@ namespace edemBack
             app.MapDelete("/Request/{id:int}", async (int id) =>
             {
                 await IDeleteFunctions.DeleteRequest(id);
+                return Results.NoContent();
+            });
+            //Delete Role
+            app.MapDelete("/Role/{id:int}", async (int id) =>
+            {
+                await IDeleteFunctions.DeleteRole(id);
                 return Results.NoContent();
             });
 

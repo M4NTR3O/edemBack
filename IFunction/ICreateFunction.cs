@@ -4,10 +4,10 @@ namespace edemBack.IFunction
 {
     public interface ICreateFunction: IConnection
     {
-        //Create object
-        public static void createObject(Models.Object _object)
+        //Create object +
+        public static async Task createObject(Models.Object _object)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             string query = @"INSERT INTO Object 
                         (office_id, street, house, apartment, rooms, status, area, kitchen, balcony) 
                         VALUES 
@@ -25,14 +25,14 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@Kitchen", _object.Kitchen);
                 command.Parameters.AddWithValue("@Balcony", _object.Balcony);
 
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
         }
         //Create worker
-        public static void createWorker(Models.Worker worker)
+        public static async Task createWorker(Models.Worker worker)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             string query = @"INSERT INTO Object 
                         (surname, name, fatherName, phoneNumber, email, birthday, role_id, office_id, password) 
                         VALUES 
@@ -46,20 +46,20 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@PhoneNumber", worker.PhoneNumber);
                 command.Parameters.AddWithValue("@Email", worker.Email);
                 //Скорее всего проблема, протестировать
-                command.Parameters.AddWithValue("@Birthday", worker.Birthday);
+                command.Parameters.AddWithValue("@Birthday", worker.Birthday.Date);
                 command.Parameters.AddWithValue("@Id_Role", worker.Id_Role);
                 command.Parameters.AddWithValue("@Id_Office", worker.Id_Office);
                 command.Parameters.AddWithValue("@Password", worker.Password);
 
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
         }
 
-        //Create Office
-        public static void createOffice(Models.Office office)
+        //Create Office +
+        public static async Task createOffice(Models.Office office)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             string query = @"INSERT INTO Office 
                         (street, house) 
                         VALUES 
@@ -70,14 +70,14 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@Street", office.Street);
                 command.Parameters.AddWithValue("@House", office.House);
 
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
         }
         //Create additional info
-        public static void createAdditional(Models.Additionally additionally)
+        public static async Task createAdditional(Models.Additionally additionally)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             string query = @"INSERT INTO Additionally 
                         (name_parametr, value, object_id) 
                         VALUES 
@@ -89,14 +89,14 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@Parametr", additionally.Parametr);
                 command.Parameters.AddWithValue("@Value", additionally.Value);
 
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
         }
-        //create role
-        public static void createRole(Models.Role role)
+        //create role +
+        public static async Task createRole(Models.Role role)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             string query = @"INSERT INTO Role 
                         (name, salary) 
                         VALUES 
@@ -107,14 +107,14 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@Name", role.Name);
                 command.Parameters.AddWithValue("@Salary", role.Salary);
 
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
         }
         //create request
-        public static void createRequest(Models.Request request)
+        public static async Task createRequest(Models.Request request)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             string query = @"INSERT INTO Request 
                         (role_id, worker_id, object_id, status, urgency) 
                         VALUES 
@@ -128,15 +128,15 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@Status", request.Status);
                 command.Parameters.AddWithValue("@Urgency", Convert.ToInt32(request.Urgency));
 
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
         }
 
         //create booking
-        public static void createBooking(Models.Booking booking)
+        public static async Task createBooking(Models.Booking booking)
         {
-            database.openConnection();
+            await database.openAsyncConnection();
             string query = @"INSERT INTO Object_Booking 
                         (object_id, date_start, date_end) 
                         VALUES 
@@ -148,9 +148,9 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@Date_Start", booking.Date_Start);
                 command.Parameters.AddWithValue("@Urgency", booking.Date_End);
 
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
             }
-            database.closeConnection();
+            await database.closeAsyncConnection();
         }
     }
 }

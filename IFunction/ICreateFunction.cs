@@ -29,7 +29,7 @@ namespace edemBack.IFunction
             }
             await database.closeAsyncConnection();
         }
-        //Create worker
+        //Create worker +
         public static async Task createWorker(Models.Worker worker)
         {
             try

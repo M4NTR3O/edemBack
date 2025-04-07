@@ -24,9 +24,6 @@ namespace edemBack.IFunction
         public static async Task UpdateWorker(Models.Worker worker)
         {
             await database.openAsyncConnection();
-            MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = $"UPDATE `Worker` SET surname = {worker.Surname}, name = {worker.Name}, fatherName = {worker.Fathername}," +
-                $"phoneNumber = {worker.PhoneNumber}, email = {worker.Email}, role_id = {worker.Id_Role}, office_id = {worker.Id_Office}, password = {worker.Password} WHERE id_worker = {worker.Id};";
             using (var command = new MySqlCommand(@"UPDATE `Worker` SET surname = @Surname, name = @Name, fatherName = @Fathername, phoneNumber = @PhoneNumber, email = @Email, role_id = @Role_Id, office_id = @Office_Id, password = @Password WHERE id_worker = @Id;", database.connection))
             {
                 command.Parameters.AddWithValue("@Surname", worker.Surname);
@@ -48,30 +45,39 @@ namespace edemBack.IFunction
         public static async Task UpdatePassword(int id, string password)
         {
             await database.openAsyncConnection();
-            MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = $"UPDATE `Worker` SET password = {password} WHERE id_request = {id};";
-            mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
+            using (var command = new MySqlCommand(@"UPDATE `Worker` SET password = @Password WHERE id_worker = @Id_worker;", database.connection))
+            {
+                command.Parameters.AddWithValue("@Password", password);
+                command.Parameters.AddWithValue("@Id_worker", id);
+
+                await command.ExecuteNonQueryAsync();
+            }
             await database.closeAsyncConnection();
         }
         //Update Booking
         public static async Task UpdateBooking(Models.Booking booking)
         {
             await database.openAsyncConnection();
-            MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = $"UPDATE `Object_Booking` SET date_start = {booking.Date_Start}, date_start = {booking.Date_End} WHERE id_booking = {booking.Id_Booking};";
-            mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
+            using (var command = new MySqlCommand(@"UPDATE Object_Booking SET date_start = @Date_start, date_end = @Date_end WHERE id_booking = @Id_Booking", database.connection))
+            {
+                command.Parameters.AddWithValue("@Date_start", booking.Date_Start.Date);
+                command.Parameters.AddWithValue("@Date_end", booking.Date_End.Date);
+                command.Parameters.AddWithValue("@Id_Booking", booking.Id_Booking);
+            }
             await database.closeAsyncConnection();
         }
         //Update Object
         public static async Task UpdateObject(Models.Object _object)
         {
             await database.openAsyncConnection();
-            MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = $"UPDATE `Object` SET balcony = {_object.Balcony}, status = {_object.Status}, kitchen = {_object.Kitchen},  WHERE id_object = {_object.Id};";
-            mysql_query.Connection = database.connection;
-            MySqlDataReader reader = mysql_query.ExecuteReader();
+            using(var command = new MySqlCommand(@"UPDATE `Object` SET balcony = @Balcony, status = @Status, kitchen = @Kitchen WHERE id_object = @Id_object;", database.connection))
+            {
+                command.Parameters.AddWithValue("@Balcony", _object.Balcony);
+                command.Parameters.AddWithValue("@Status", _object.Status);
+                command.Parameters.AddWithValue("@Kitchen", _object.Kitchen);
+                command.Parameters.AddWithValue("@Id_object", _object.Id);
+                await command.ExecuteReaderAsync();
+            }
             await database.closeAsyncConnection();
         }
     }

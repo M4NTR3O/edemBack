@@ -124,6 +124,28 @@ namespace edemBack.IFunction
             return workers;
         }
 
+        public static async Task<Role> getRole(int id)
+        {
+            await database.openAsyncConnection();
+            MySqlCommand mysql_query = database.connection.CreateCommand();
+            mysql_query.CommandText = $"SELECT `id_role`, `name`, `salary` FROM `Role` WHERE `id_role`={id};";
+            mysql_query.Connection = database.connection;
+            var reader = await mysql_query.ExecuteReaderAsync();
+            List<Models.Role> roles = new List<Role>();
+            while (await reader.ReadAsync())
+            {
+                Models.Role oneRole = new Role
+                {
+                    Role_Id = int.Parse(reader[0].ToString()!),
+                    Name = reader[1].ToString()!,
+                    Salary = int.Parse(reader[2].ToString()!)
+                };
+                roles.Add(oneRole);
+            }
+            await database.closeAsyncConnection();
+            return roles[0];
+        }
+
         //Get Request with filter
         public static async Task<List<Models.Request>> getAllRequest()
         {
@@ -199,12 +221,34 @@ namespace edemBack.IFunction
         }
         //Get additional material
 
+        //Get Office
+        public static async Task<List<Models.Office>> getAllOffice()
+        {
+            await database.openAsyncConnection();
+            MySqlCommand mysql_query = database.connection.CreateCommand();
+            mysql_query.CommandText = "SELECT `id_office`, `street`, `house` FROM `Office`;";
+            mysql_query.Connection = database.connection;
+            var reader = await mysql_query.ExecuteReaderAsync();
+            List<Models.Office> offices = new List<Models.Office>();
+            while (reader.Read())
+            {
+                Models.Office oneOffice = new Models.Office
+                {
+                    Office_Id = int.Parse(reader[0].ToString()!),
+                    Street = reader[1].ToString()!,
+                    House = reader[2].ToString()!
+                };
+                offices.Add(oneOffice);
+            }
+            await database.closeAsyncConnection();
+            return offices;
+        }
         //Get Access user
         public static async Task<int> getAuth(string login, string password)
         {
             await database.openAsyncConnection();
             MySqlCommand mysql_query = database.connection.CreateCommand();
-            mysql_query.CommandText = @$"SELECT id_worker, login, password FROM Worker WHERE login = {login};";
+            mysql_query.CommandText = @$"SELECT id_worker, phoneNumber, password FROM Worker WHERE phoneNumber = {login};";
             mysql_query.Connection = database.connection;
             var reader = await mysql_query.ExecuteReaderAsync();
             if (await reader.ReadAsync())
@@ -224,7 +268,7 @@ namespace edemBack.IFunction
             else
             {
                 await database.closeAsyncConnection();
-                return -2;
+                return 0;
             }
         }
 

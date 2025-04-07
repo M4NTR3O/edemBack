@@ -248,6 +248,7 @@ namespace edemBack
                 return Results.Ok(result);
             });
 
+            //Get All Roles 
             app.MapGet("/Roles", async () =>
             {
                 var roles = await IGetFunction.getAllRoles();
@@ -258,6 +259,20 @@ namespace edemBack
                 else
                 {
                     return Results.Ok(roles);
+                }
+            });
+
+            //Get All Offices
+            app.MapGet("/Offices", async () =>
+            {
+                var offices = await IGetFunction.getAllOffice();
+                if (offices.Count == 0)
+                {
+                    return Results.NotFound("Not found offices");
+                }
+                else
+                {
+                    return Results.Ok(offices);
                 }
             });
 
@@ -480,7 +495,7 @@ namespace edemBack
             });
 
             //Update Booking
-            app.MapPut("/UpdateBooking", (Models.Booking booking) =>
+            app.MapPut("/UpdateBooking", async (Models.Booking booking) =>
             {
                 var validationContext = new ValidationContext(booking);
                 var validationResults = new List<ValidationResult>();
@@ -489,7 +504,7 @@ namespace edemBack
                 {
                     try
                     {
-                        IUpdateFunction.UpdateBooking(booking);
+                        await IUpdateFunction.UpdateBooking(booking);
                         return Results.NoContent();
                     }
                     catch (Exception ex)
@@ -504,7 +519,7 @@ namespace edemBack
             });
 
             //Update Object
-            app.MapPut("/UpdateObject", (Models.Object _object) =>
+            app.MapPut("/UpdateObject", async (Models.Object _object) =>
             {
                 var validationContext = new ValidationContext(_object);
                 var validationResults = new List<ValidationResult>();
@@ -513,7 +528,7 @@ namespace edemBack
                 {
                     try
                     {
-                        IUpdateFunction.UpdateObject(_object);
+                        await IUpdateFunction.UpdateObject(_object);
                         return Results.NoContent();
                     }
                     catch (Exception ex)
@@ -577,7 +592,8 @@ namespace edemBack
 
             //Auth
             app.MapPost("/Auth", async (AuthRequest request) =>
-             {
+            {
+                List<string> importnantRoles = ["Директор","Администратор", "Оператор", "Менеджер"];
                 var validationContext = new ValidationContext(request);
                 var validationResults = new List<ValidationResult>();
                 var isValid = Validator.TryValidateObject(request, validationContext, validationResults, true);
@@ -586,7 +602,7 @@ namespace edemBack
                     try
                     {
                         int id = await IGetFunction.getAuth(request.Login, request.Password);
-                        if (id == -2)
+                        if (id == 0)
                         {
                             return Results.BadRequest("Нет пользователя");
                         }
@@ -596,8 +612,17 @@ namespace edemBack
                         }
                         else
                         {
-                            var workers = IGetFunction.getWorker(id);
-                            return Results.Accepted(null, workers);
+                            var role = await IGetFunction.getRole(id);
+                            Dictionary<string, object> json = new Dictionary<string, object>();
+                            var worker = (await IGetFunction.getWorker(id))[0];
+                            json.Add("Worker", worker);
+                            if (importnantRoles.Contains(role.Name))
+                            {
+                                var roles = await IGetFunction.getAllRoles();
+                                json.Add("Roles", await IGetFunction.getAllRoles());
+                                return Results.Accepted(null, json);
+                            }
+                            return Results.Accepted(null, json);
                         }
                     }
                     catch (Exception ex)
@@ -611,7 +636,10 @@ namespace edemBack
                 }
             });
 
-
+            /*app.MapGet("/importantRole", (List<Models.Worker> workers, List<Models.Role> roles) =>
+            {
+                return Results.Ok(workers);
+            });*/
             app.Run();
         }
     }

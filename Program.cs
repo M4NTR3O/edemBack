@@ -27,6 +27,9 @@ namespace edemBack
                 });
             });
 
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+
             var app = builder.Build();
 
             app.UseCors("AllowAll");
@@ -636,10 +639,12 @@ namespace edemBack
                 }
             });
 
-            /*app.MapGet("/importantRole", (List<Models.Worker> workers, List<Models.Role> roles) =>
+            if (app.Environment.IsDevelopment())
             {
-                return Results.Ok(workers);
-            });*/
+                app.UseSwagger();
+                app.UseSwaggerUI(); // по умолчанию будет на /swagger
+            }
+
             app.Run();
         }
     }

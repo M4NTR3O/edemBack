@@ -166,8 +166,8 @@ namespace edemBack.IFunction
             using (var command = new MySqlCommand(query, database.connection))
             {
                 command.Parameters.AddWithValue("@Object_Id", booking.Object_id);
-                command.Parameters.AddWithValue("@Date_Start", booking.Date_Start);
-                command.Parameters.AddWithValue("@Urgency", booking.Date_End);
+                command.Parameters.Add("@Date_Start", MySqlDbType.Date).Value =  booking.Date_Start;
+                command.Parameters.Add("@Date_End", MySqlDbType.Date).Value = booking.Date_End;
 
                 await command.ExecuteNonQueryAsync();
             }

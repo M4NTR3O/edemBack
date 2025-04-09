@@ -1,4 +1,5 @@
-﻿using MySql.Data.MySqlClient;
+﻿using edemBack.Models;
+using MySql.Data.MySqlClient;
 
 namespace edemBack.IFunction
 {
@@ -155,7 +156,7 @@ namespace edemBack.IFunction
         }
 
         //create booking
-        public static async Task createBooking(Models.Booking booking)
+        public static async Task<bool> createBooking(Models.Booking booking)
         {
             await database.openAsyncConnection();
             string query = @"INSERT INTO Object_Booking 
@@ -163,15 +164,59 @@ namespace edemBack.IFunction
                         VALUES 
                         (@Object_Id, @Date_Start, @Date_End);";
 
+            string newQuery = @"SELECT id_booking, object_id, date_start, date_end FROM Object_Booking WHERE object_id = @Object_Id; ";
+            List<Models.Booking> bookings = new List<Models.Booking>();
+            using (var newCommand = new MySqlCommand(newQuery, database.connection))
+            {
+                newCommand.Parameters.AddWithValue("@Object_Id", booking.Object_id);
+
+                try
+                {
+                    using (var reader = await newCommand.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            Models.Booking oneBooking = new Models.Booking
+                            {
+                                Id_Booking = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                                Object_id = reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
+                                Date_Start = reader.IsDBNull(2) ? DateTime.MinValue : reader.GetDateTime(2),
+                                Date_End = reader.IsDBNull(3) ? DateTime.MinValue : reader.GetDateTime(3)
+                            };
+                            bookings.Add(oneBooking);
+                        }
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine("Ошибка MySQL: " + ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Общая ошибка: " + ex.Message);
+                }
+            }
+            foreach (var oneBooking in bookings)
+            {
+                bool hasConflict = (booking.Date_Start >= oneBooking.Date_Start && booking.Date_Start < oneBooking.Date_End) ||
+                    (booking.Date_End > oneBooking.Date_Start && booking.Date_End <= oneBooking.Date_End) ||
+                    (booking.Date_Start <= oneBooking.Date_Start && booking.Date_End >= oneBooking.Date_End);
+                
+                if (hasConflict){
+                    await database.closeAsyncConnection();
+                    return false;
+                }
+            }
+
             using (var command = new MySqlCommand(query, database.connection))
             {
                 command.Parameters.AddWithValue("@Object_Id", booking.Object_id);
-                command.Parameters.Add("@Date_Start", MySqlDbType.Date).Value =  booking.Date_Start;
+                command.Parameters.Add("@Date_Start", MySqlDbType.Date).Value = booking.Date_Start;
                 command.Parameters.Add("@Date_End", MySqlDbType.Date).Value = booking.Date_End;
-
                 await command.ExecuteNonQueryAsync();
-            }
+            }   
             await database.closeAsyncConnection();
+            return true;
         }
     }
 }

@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Drawing.Printing;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace edemBack
 {
@@ -103,14 +104,18 @@ namespace edemBack
             //Get one object with ID
             app.MapGet("/Object/{id:int}", async (int id) =>
             {
-                var objects = await IGetFunction.getObject(id);
-                if (objects.Count == 0)
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
+                var _object = await IGetFunction.getObject(id);
+                if (_object == null)
                 {
                     return Results.NotFound("Not found object with that id");
                 }
                 else
                 {
-                    return Results.Ok(objects[0]);
+                    return Results.Ok(_object);
                 }
             });
 
@@ -161,14 +166,18 @@ namespace edemBack
             //Get One Worker with ID
             app.MapGet("/Worker/{id:int}", async (int id) =>
             {
-                var workers = await IGetFunction.getWorker(id);
-                if (workers.Count == 0)
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
+                var worker = await IGetFunction.getWorker(id);
+                if (worker == null)
                 {
                     return Results.NotFound("Not found worker");
                 }
                 else
                 {
-                    return Results.Ok(workers);
+                    return Results.Ok(worker);
                 }
             });
 
@@ -216,11 +225,12 @@ namespace edemBack
                 return Results.Ok(result);
             });
 
-            //Get All Booking
-            app.MapGet("/Booking", async (HttpRequest request) =>
+            //Get All BookingObject
+            app.MapGet("/Bookings", async (HttpRequest request) =>
             {
                 //filter
                 int office_id = -1;
+                DateTime date = DateTime.Now;
                 //list item
                 var bookingList = await IGetFunction.getAllBooking();
                 if (bookingList.Count == 0)
@@ -238,7 +248,17 @@ namespace edemBack
                         var bookings = await bookingQuery.ToListAsync();
                         var objects = await Task.WhenAll(bookings.Select(async x => await IGetFunction.getObject(x.Object_id)));
                         bookingQuery = bookingQuery.Where(
-                            x => objects.First(o => o[0].Office_Id == office_id) != null);
+                            x => objects.First(o => o.Office_Id == office_id) != null);
+                    }
+                }
+                //Date
+                if (request.Query.ContainsKey("Date"))
+                {
+                    var parsedDate = DateTime.TryParse(request.Query["Date"], out date);
+                    if (parsedDate)
+                    {
+                        bookingQuery = bookingQuery.Where(
+                            x => x.Date_Start <= date && x.Date_End >= date);
                     }
                 }
                 //result list
@@ -249,6 +269,41 @@ namespace edemBack
                     return Results.NotFound("Not found bookings with that parametrs");
                 }
                 return Results.Ok(result);
+            });
+
+            //Get One Booking
+            app.MapGet("/Booking/{id:int}", async (int id) =>
+            {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
+                var booking = await IGetFunction.getBooking(id);
+                if (booking == null)
+                {
+                    return Results.NotFound("Not found booking");
+                }
+                else
+                {
+                    return Results.Ok(booking);
+                }
+            });
+            //Get One Booking date
+            app.MapGet("/Booking/{date}", async (DateTime date) =>
+            {
+                var booking = await IGetFunction.getBookingForDate(date);
+                if (booking == null)
+                {
+                    return Results.NotFound("Not found booking");
+                }
+                else
+                {
+                    return Results.Ok(booking);
+                }    
+            });
+
+            app.MapGet("/Booooking/{date}", (DateTime date) => {
+                return Results.Ok($"Дата: {date:yyyy-MM-dd}");
             });
 
             //Get All Roles 
@@ -263,6 +318,21 @@ namespace edemBack
                 {
                     return Results.Ok(roles);
                 }
+            });
+
+            //Get One Role
+            app.MapGet("/Role/{id:int}", async (int id) =>
+            {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not Natural integer id");
+                }
+                var role = await IGetFunction.getRole(id);
+                if (role == null)
+                {
+                    return Results.NotFound("Not found role");
+                }
+                return Results.Ok(role);
             });
 
             //Get All Offices
@@ -409,8 +479,12 @@ namespace edemBack
                 {
                     try
                     {
-                        await ICreateFunction.createBooking(booking);
-                        return Results.Created();
+                        bool flag = await ICreateFunction.createBooking(booking);
+                        if (flag)
+                        {
+                            return Results.Created();
+                        }
+                        return Results.BadRequest("Наложение дат");
                     }
                     catch (Exception ex)
                     {
@@ -617,7 +691,7 @@ namespace edemBack
                         {
                             var role = await IGetFunction.getRole(id);
                             Dictionary<string, object> json = new Dictionary<string, object>();
-                            var worker = (await IGetFunction.getWorker(id))[0];
+                            var worker = (await IGetFunction.getWorker(id));
                             json.Add("Worker", worker);
                             if (importnantRoles.Contains(role.Name))
                             {

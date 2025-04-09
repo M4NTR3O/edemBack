@@ -63,6 +63,8 @@ namespace edemBack.IFunction
                 command.Parameters.AddWithValue("@Date_start", booking.Date_Start.Date);
                 command.Parameters.AddWithValue("@Date_end", booking.Date_End.Date);
                 command.Parameters.AddWithValue("@Id_Booking", booking.Id_Booking);
+
+                await command.ExecuteNonQueryAsync();
             }
             await database.closeAsyncConnection();
         }

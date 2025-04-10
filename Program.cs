@@ -289,7 +289,7 @@ namespace edemBack
                 }
             });
             //Get One Booking date
-            app.MapGet("/Booking/{date}", async (DateTime date) =>
+            app.MapGet("/BookingDate/{date}", async (DateTime date) =>
             {
                 var booking = await IGetFunction.getBookingForDate(date);
                 if (booking == null)
@@ -300,10 +300,6 @@ namespace edemBack
                 {
                     return Results.Ok(booking);
                 }    
-            });
-
-            app.MapGet("/Booooking/{date}", (DateTime date) => {
-                return Results.Ok($"Дата: {date:yyyy-MM-dd}");
             });
 
             //Get All Roles 

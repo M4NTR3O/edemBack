@@ -233,13 +233,16 @@ namespace edemBack.IFunction
             {
                 command.Parameters.Add("@Date", MySqlDbType.Date).Value = date;
                 var reader = await command.ExecuteReaderAsync();
-                booking = new Models.Booking
+                while (await reader.ReadAsync())
                 {
-                    Id_Booking = int.Parse(reader[0].ToString()!),
-                    Object_id = int.Parse(reader[1].ToString()!),
-                    Date_Start = DateTime.Parse(reader[2].ToString()!),
-                    Date_End = DateTime.Parse(reader[3].ToString()!)
-                };
+                    booking = new Models.Booking
+                    {
+                        Id_Booking = int.Parse(reader[0].ToString()!),
+                        Object_id = int.Parse(reader[1].ToString()!),
+                        Date_Start = DateTime.Parse(reader[2].ToString()!),
+                        Date_End = DateTime.Parse(reader[3].ToString()!)
+                    };
+                }
             }
             await database.closeAsyncConnection();
             return booking;

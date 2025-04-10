@@ -6,5 +6,7 @@
         public int Object_id { get; set; }
         public DateTime Date_Start { get; set; }
         public DateTime Date_End { get; set; }
+
+        public string Status { get; set; }
     }
 }

@@ -182,7 +182,7 @@ namespace edemBack.IFunction
         {
             await database.openAsyncConnection();
             List<Models.Booking> booking = new List<Models.Booking>();
-            string query = "SELECT `id_booking`, `object_id`, `date_start`, `date_end` FROM `Object_Booking`;";
+            string query = "SELECT `id_booking`, `object_id`, `date_start`, `date_end`, `Status`.`name` FROM `Object_Booking` INNER JOIN `Status` ON `Object_Booking`.`status` = `Status`.`id_status`;";
             using (var command = new MySqlCommand(query, database.connection)){
                 var reader = await command.ExecuteReaderAsync();
 
@@ -193,7 +193,8 @@ namespace edemBack.IFunction
                         Id_Booking = int.Parse(reader[0].ToString()!),
                         Object_id = int.Parse(reader[1].ToString()!),
                         Date_Start = DateTime.Parse(reader[2].ToString()!),
-                        Date_End = DateTime.Parse(reader[3].ToString()!)
+                        Date_End = DateTime.Parse(reader[3].ToString()!),
+                        Status = reader[4].ToString()!
                     };
                     booking.Add(oneBooking);
                 }
@@ -207,16 +208,18 @@ namespace edemBack.IFunction
         {
             await database.openAsyncConnection();
             Models.Booking? booking = null;
-            string query = $"SELECT `id_booking`, `object_id`, `date_start`, `date_end` FROM `Object_Booking` WHERE `id_booking` = {id};";
+            string query = $"SELECT `id_booking`, `object_id`, `date_start`, `date_end`, `Status`.`name` FROM `Object_Booking` INNER JOIN `Status` ON `Object_Booking`.`status` = `Status`.`id_status` WHERE `id_booking` = {id} ;";
             using (var command = new MySqlCommand(query, database.connection))
             {
                 var reader = await command.ExecuteReaderAsync();
+                await reader.ReadAsync();
                 booking = new Models.Booking
                 {
                     Id_Booking = int.Parse(reader[0].ToString()!),
                     Object_id = int.Parse(reader[1].ToString()!),
                     Date_Start = DateTime.Parse(reader[2].ToString()!),
-                    Date_End = DateTime.Parse(reader[3].ToString()!)
+                    Date_End = DateTime.Parse(reader[3].ToString()!),
+                    Status = reader[4].ToString()!
                 };
             }
             await database.closeAsyncConnection();
@@ -224,24 +227,26 @@ namespace edemBack.IFunction
         }
 
         //Get One Booking
-        public static async Task<Models.Booking?> getBookingForDate(DateTime date)
+        public static async Task<List<Models.Booking?>> getBookingForDate(DateTime date)
         {
             await database.openAsyncConnection();
-            Models.Booking? booking = null;
-            string query = @"SELECT `id_booking`, `object_id`, `date_start`, `date_end` FROM `Object_Booking` WHERE @Date BETWEEN `date_start` AND `date_end`;";
+            List<Models.Booking?> booking = new List<Booking?>();
+            string query = @"SELECT `id_booking`, `object_id`, `date_start`, `date_end`, `Status`.`name` FROM `Object_Booking` INNER JOIN `Status` ON `Object_Booking`.`status` = `Status`.`id_status` WHERE @Date BETWEEN `date_start` AND `date_end` ;";
             using (var command = new MySqlCommand(query, database.connection))
             {
                 command.Parameters.Add("@Date", MySqlDbType.Date).Value = date;
                 var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    booking = new Models.Booking
+                    var oneBooking = new Models.Booking
                     {
                         Id_Booking = int.Parse(reader[0].ToString()!),
                         Object_id = int.Parse(reader[1].ToString()!),
                         Date_Start = DateTime.Parse(reader[2].ToString()!),
-                        Date_End = DateTime.Parse(reader[3].ToString()!)
+                        Date_End = DateTime.Parse(reader[3].ToString()!),
+                        Status = reader[4].ToString()!
                     };
+                    booking.Add(oneBooking);
                 }
             }
             await database.closeAsyncConnection();

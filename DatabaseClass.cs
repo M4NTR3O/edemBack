@@ -43,5 +43,10 @@ namespace edemBack
         {
             return connection;
         }
+        public MySqlConnection CreateNewConnection()
+        {
+            var newConnection = new MySqlConnection(connection.ConnectionString);
+            return newConnection;
+        }
     }
 }

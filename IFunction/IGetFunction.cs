@@ -3,12 +3,13 @@ using edemBack.Models;
 
 namespace edemBack.IFunction
 {
-    public interface IGetFunction: IConnection
+    public interface IGetFunction
     {
         //Get all object
-        public static async Task<List<Models.Object>> getAllObject()
+        public static async Task<List<Models.Object>> getAllObject(IDatabaseFactory factory)
         {
-            using(var connection = database.CreateNewConnection())
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
                 List<Models.Object> objects = new List<Models.Object>();
@@ -40,8 +41,9 @@ namespace edemBack.IFunction
         }
 
         //Get one object
-        public static async Task<Models.Object?> getObject(int id)
+        public static async Task<Models.Object?> getObject(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -75,8 +77,9 @@ namespace edemBack.IFunction
         }
 
         //Get Workers
-        public static async Task<List<Worker>> getAllWorker()
+        public static async Task<List<Worker>> getAllWorker(IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -110,8 +113,9 @@ namespace edemBack.IFunction
             
         }
         //Get 1 worker
-        public static async Task<Worker?> getWorker(int id)
+        public static async Task<Worker?> getWorker(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -143,8 +147,9 @@ namespace edemBack.IFunction
             
         }
 
-        public static async Task<Role?> getRole(int id)
+        public static async Task<Role?> getRole(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -170,8 +175,9 @@ namespace edemBack.IFunction
         }
 
         //Get Request with filter
-        public static async Task<List<Models.Request>> getAllRequest()
+        public static async Task<List<Models.Request>> getAllRequest(IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -201,8 +207,9 @@ namespace edemBack.IFunction
             }
         }
         //Get Booking
-        public static async Task<List<Models.Booking>> getAllBooking()
+        public static async Task<List<Models.Booking>> getAllBooking(IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -231,8 +238,9 @@ namespace edemBack.IFunction
         }
 
         //Get One Booking
-        public static async Task<Models.Booking?> getBooking(int id)
+        public static async Task<Models.Booking?> getBooking(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -257,8 +265,9 @@ namespace edemBack.IFunction
         }
 
         //Get One Booking
-        public static async Task<List<Models.Booking?>> getBookingForDate(DateTime date)
+        public static async Task<List<Models.Booking?>> getBookingForDate(DateTime date, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -287,8 +296,9 @@ namespace edemBack.IFunction
         }
 
         //Get Roles
-        public static async Task<List<Models.Role>> getAllRoles()
+        public static async Task<List<Models.Role>> getAllRoles(IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -314,8 +324,9 @@ namespace edemBack.IFunction
             }
         }
         //Get additional material for id
-        public static async Task<List<Models.Additionally>> getAdditionallyObject(int id)
+        public static async Task<List<Models.Additionally>> getAdditionallyObject(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -342,8 +353,9 @@ namespace edemBack.IFunction
         }
 
         //Get Office
-        public static async Task<List<Models.Office>> getAllOffice()
+        public static async Task<List<Models.Office>> getAllOffice(IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -369,18 +381,19 @@ namespace edemBack.IFunction
             }
         }
         //Get Access user
-        public static async Task<int> getAuth(string login, string password)
+        public static async Task<int> getAuth(string login, string password, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
                 string query = @$"SELECT id_worker, phoneNumber, password FROM Worker WHERE phoneNumber = {login};";
-                using (var command = new MySqlCommand(query, database.connection))
+                using (var command = new MySqlCommand(query, connection))
                 {
                     var reader = await command.ExecuteReaderAsync();
                     if (await reader.ReadAsync())
                     {
-                        if (reader[2].ToString() == password)
+                        if (reader[2].ToString() == password/*PasswordHasher.Verify(password, reader[2].ToString()!)*/)
                         {
                             int id = Convert.ToInt32(reader[0].ToString()!);
                             await connection.CloseAsync();
@@ -398,6 +411,82 @@ namespace edemBack.IFunction
                         return 0;
                     }
                 }
+            }
+        }
+        //Get Status id
+        public static async Task<Models.Status?> getOneStatus(int id, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                Models.Status? status = null;
+                string query = @"SELECT `id_status`, `name` FROM `Status` WHERE `id_status` = @Id;";
+                using(var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id);
+                    var reader = await command.ExecuteReaderAsync();
+                    await reader.ReadAsync();
+                    status = new Models.Status
+                    {
+                        Id = int.Parse(reader[0].ToString()!),
+                        Name = reader[1].ToString()!
+                    };
+                }
+                await connection.CloseAsync();
+                return status;
+            }
+        }
+        //Get All Status
+        public static async Task<List<Models.Status>> getAllStatus(IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Status> statusAll = new List<Status>();
+                string query = @"SELECT `id_status`, `name` FROM `Status`;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    var reader = await command.ExecuteReaderAsync();
+                    while(await reader.ReadAsync())
+                    {
+                        Models.Status status = new Models.Status
+                        {
+                            Id = int.Parse(reader[0].ToString()!),
+                            Name = reader[1].ToString()!
+                        };
+                        statusAll.Add(status);
+                    }
+                }
+                await connection.CloseAsync();
+                return statusAll;
+            }
+        }
+        //Get Not Important
+        public static async Task<List<Models.Role>> getNotImportnantRoles(IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Role> roles = new List<Role>();
+                string query = "SELECT `id_role`, `name` FROM `Role` WHERE NOT `id_role` BETWEEN 1 AND 5;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Role role = new Models.Role
+                        {
+                            Role_Id = int.Parse(reader[0].ToString()!),
+                            Name = reader[1].ToString()!
+                        };
+                        roles.Add(role);
+                    }
+                }
+                await connection.CloseAsync();
+                return roles;
             }
         }
     }

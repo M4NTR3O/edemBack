@@ -3,11 +3,12 @@ using MySql.Data.MySqlClient;
 
 namespace edemBack.IFunction
 {
-    public interface ICreateFunction: IConnection
+    public interface ICreateFunction
     {
         //Create object +
-        public static async Task createObject(Models.Object _object)
+        public static async Task createObject(Models.Object _object, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -34,8 +35,9 @@ namespace edemBack.IFunction
             }
         }
         //Create worker +
-        public static async Task createWorker(Models.Worker worker)
+        public static async Task createWorker(Models.Worker worker, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -65,8 +67,9 @@ namespace edemBack.IFunction
         }
 
         //Create Office +
-        public static async Task createOffice(Models.Office office)
+        public static async Task createOffice(Models.Office office, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -86,8 +89,9 @@ namespace edemBack.IFunction
             }
         }
         //Create additional info
-        public static async Task createAdditional(Models.Additionally additionally)
+        public static async Task createAdditional(Models.Additionally additionally, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -108,8 +112,9 @@ namespace edemBack.IFunction
             }
         }
         //create role +
-        public static async Task createRole(Models.Role role)
+        public static async Task createRole(Models.Role role, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -129,8 +134,9 @@ namespace edemBack.IFunction
             }
         }
         //create request
-        public static async Task createRequest(Models.Request request)
+        public static async Task createRequest(Models.Request request, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -154,9 +160,9 @@ namespace edemBack.IFunction
         }
 
         //create booking
-        public static async Task<bool> createBooking(Models.Booking booking)
+        public static async Task<bool> createBooking(Models.Booking booking, IDatabaseFactory factory)
         {
-            
+            var database = factory.Create();
             string query = @"INSERT INTO Object_Booking 
                         (object_id, date_start, date_end, status) 
                         VALUES 

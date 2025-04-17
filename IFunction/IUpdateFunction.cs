@@ -3,12 +3,13 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace edemBack.IFunction
 {
-    public interface IUpdateFunction: IConnection
+    public interface IUpdateFunction
     {
         //Переписать как CREATE методы
         //Update Request
-        public static async Task UpdateRequest(Models.Request request)
+        public static async Task UpdateRequest(Models.Request request, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -27,8 +28,9 @@ namespace edemBack.IFunction
             }
         }
         //Update Worker
-        public static async Task UpdateWorker(Models.Worker worker)
+        public static async Task UpdateWorker(Models.Worker worker, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -52,8 +54,9 @@ namespace edemBack.IFunction
         }
 
         //Update Worker password не проверено
-        public static async Task UpdatePassword(int id, string password)
+        public static async Task UpdatePassword(int id, string password, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -68,8 +71,9 @@ namespace edemBack.IFunction
             }
         }
         //Update Booking
-        public static async Task UpdateBooking(Models.Booking booking)
+        public static async Task UpdateBooking(Models.Booking booking, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             int id_status = 0;
             using (var connection = database.CreateNewConnection())
             {
@@ -100,8 +104,9 @@ namespace edemBack.IFunction
             }
         }
         //Update Object
-        public static async Task UpdateObject(Models.Object _object)
+        public static async Task UpdateObject(Models.Object _object, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();

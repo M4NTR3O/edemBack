@@ -2,11 +2,12 @@
 
 namespace edemBack.IFunction
 {
-    public interface IDeleteFunctions: IConnection
+    public interface IDeleteFunctions
     {
         //Delete Object
-        public static async Task DeleteObject(int id)
+        public static async Task DeleteObject(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -18,8 +19,9 @@ namespace edemBack.IFunction
             }
         }
         //Delete Worker
-        public static async Task DeleteWorker(int id)
+        public static async Task DeleteWorker(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -31,8 +33,9 @@ namespace edemBack.IFunction
             }
         }
         //Delete Office
-        public static async Task DeleteOffice(int id)
+        public static async Task DeleteOffice(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -44,8 +47,9 @@ namespace edemBack.IFunction
             }
         }
         //Delete Booking
-        public static async Task DeleteBooking(int id)
+        public static async Task DeleteBooking(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -57,8 +61,9 @@ namespace edemBack.IFunction
             }
         }
         //Delete Role
-        public static async Task DeleteRole(int id)
+        public static async Task DeleteRole(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -70,8 +75,9 @@ namespace edemBack.IFunction
             }
         }
         //Delete Request
-        public static async Task DeleteRequest(int id)
+        public static async Task DeleteRequest(int id, IDatabaseFactory factory)
         {
+            var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();

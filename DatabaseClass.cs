@@ -7,13 +7,13 @@ namespace edemBack
     public class DatabaseClass
     {
         internal MySqlConnection connection;
-        public DatabaseClass()
+        public DatabaseClass(IConfiguration configuration)
         {
-            string host = "127.0.0.1"; // Имя хоста
-            string port = "3306";
-            string database = "edem_back"; // Имя базы данных
-            string user = "root"; // Имя пользователя
-            string password = ""; // Пароль пользователя
+            string host = configuration["Database:Host"]; // Имя хоста
+            string port = configuration["Database:Port"];
+            string database = configuration["Database:Name"]; // Имя базы данных
+            string user = configuration["Database:User"]; // Имя пользователя
+            string password = configuration["Database:Password"]; // Пароль пользователя
 
             string Connect = "server=" + host + ";port=" + port + ";username=" + user + ";password=" + password + ";database=" + database + ";";
 

@@ -206,6 +206,34 @@ namespace edemBack.IFunction
                 return requests;
             }
         }
+
+        //Get One Request
+        public static async Task<Models.Request?> getRequest(int id, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                Models.Request? request = null;
+                string query = $"SELECT `id_request`, `role_id`, `worker_id`, `object_id`, `status`, `urgency` FROM `Request` WHERE `id_request` = {id} ;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    var reader = await command.ExecuteReaderAsync();
+                    await reader.ReadAsync();
+                    request = new Models.Request
+                    {
+                        Request_Id = int.Parse(reader[0].ToString()!),
+                        Role_Id = int.Parse(reader[1].ToString()!),
+                        Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
+                        Object_Id = int.Parse(reader[3].ToString()!),
+                        Status = reader[4].ToString()!,
+                        Urgency = bool.Parse(reader[5].ToString()!)
+                    };
+                }
+                await connection.CloseAsync();
+                return request;
+            }
+        }
         //Get Booking
         public static async Task<List<Models.Booking>> getAllBooking(IDatabaseFactory factory)
         {

@@ -1,14 +1,10 @@
 using edemBack.IFunction;
 using edemBack.Models;
-using Microsoft.AspNetCore.Mvc;
-using Org.BouncyCastle.Asn1.Ocsp;
-using Org.BouncyCastle.Utilities;
 using System.ComponentModel.DataAnnotations;
-using System.Drawing.Printing;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
+using Microsoft.AspNetCore.OpenApi;
 
 namespace edemBack
 {
@@ -41,6 +37,8 @@ namespace edemBack
                     Title = "EdemBack API",
                     Description = "Документация существующих эндпоинтов API",
                 });
+                var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
             });
 
             var app = builder.Build();
@@ -48,9 +46,9 @@ namespace edemBack
             app.UseCors("AllowAll");
             app.UseMiddleware<RequestLoggingMiddleware>();
 
-            
+
             //GetAllObject and with filter
-            app.MapGet("/Objects", async (HttpRequest request, IDatabaseFactory factory) => 
+            app.MapGet("/Objects", async (HttpRequest request, IDatabaseFactory factory) =>
             {
                 //filter parametrs
                 bool kitchen = false;
@@ -62,7 +60,7 @@ namespace edemBack
                 var objectsQuery = objects.AsQueryable();
                 if (objects.Count == 0)
                 {
-                    return Results.NoContent();
+                    Results.NotFound("Not found objects");
                 }
                 //filters
                 //office_id
@@ -111,14 +109,56 @@ namespace edemBack
                     return Results.NotFound("Not found objects with that parametrs");
                 }
                 return Results.Ok(result);
-            });
+            })
+                .WithName("GetAllObjects")
+                .WithTags("Object", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить все объекты";
+                    op.Description = "Возвращает все объекты, с возможностью фильтрации по офису, количеству комнат, наличию кухни и балкона.";
+
+                    op.Parameters = new List<Microsoft.OpenApi.Models.OpenApiParameter>
+                        {
+                            new Microsoft.OpenApi.Models.OpenApiParameter
+                            {
+                                Name = "Office",
+                                In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                                Required = false,
+                                Description = "ID офиса для фильтрации объектов по офису",
+                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
+                            },
+                            new Microsoft.OpenApi.Models.OpenApiParameter
+                            {
+                                Name = "Rooms",
+                                In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                                Required = false,
+                                Description = "Количество комнат в объекте для фильтрации объектов по количеству комнат",
+                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
+                            },
+                            new Microsoft.OpenApi.Models.OpenApiParameter
+                            {
+                                Name = "Balcony",
+                                In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                                Required = false,
+                                Description = "Наличие балкона для фильтрации объектов по раличию балкона",
+                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "bool" }
+                            },
+                            new Microsoft.OpenApi.Models.OpenApiParameter
+                            {
+                                Name = "Kitchen",
+                                In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                                Required = false,
+                                Description = "Наличие кухни для фильтрации объектов по наличию кухни",
+                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "bool" }
+                            }
+                        };
+
+                    return op;
+                })
+                .Produces<List<Models.Object>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get one object with ID
-            /// <summary>
-            /// Получение объекта по ID
-            /// </summary>
-            /// <param name="model">Объект</param>
-            /// <returns></returns>
             app.MapGet("/Object/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
@@ -134,7 +174,19 @@ namespace edemBack
                 {
                     return Results.Ok(_object);
                 }
-            });
+            })
+                .WithName("GetObjectByID")
+                .WithTags("Object", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить объект по его ID";
+                    op.Description = "Получение объекта по его идентификатору";
+                    op.Parameters[0].Description = "Идентификатор объекта (Натуральное число)";
+                    return op;
+                })
+                .Produces<Models.Object>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get All Workers
             app.MapGet("/Workers", async (HttpRequest request, IDatabaseFactory factory) =>
@@ -178,7 +230,38 @@ namespace edemBack
                     return Results.NotFound("Not found workers with that parametrs");
                 }
                 return Results.Ok(result);
-            });
+            })
+                .WithName("GetAllWorkers")
+                .WithTags("Worker", "GET")
+                .WithOpenApi(op =>
+            {
+                op.Summary = "Получить список работников";
+                op.Description = "Возвращает всех работников, с возможностью фильтрации по офису и роли.";
+
+                op.Parameters = new List<Microsoft.OpenApi.Models.OpenApiParameter>
+                {
+                    new Microsoft.OpenApi.Models.OpenApiParameter
+                    {
+                        Name = "Office",
+                        In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                        Required = false,
+                        Description = "ID офиса для фильтрации работников по офису",
+                        Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
+                    },
+                    new Microsoft.OpenApi.Models.OpenApiParameter
+                    {
+                        Name = "Role",
+                        In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                        Required = false,
+                        Description = "ID роли для фильтрации работников по роли",
+                        Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
+                    }
+                };
+
+                return op;
+            })
+                .Produces<List<Models.Worker>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get One Worker with ID
             app.MapGet("/Worker/{id:int}", async (int id, IDatabaseFactory factory) =>
@@ -196,7 +279,19 @@ namespace edemBack
                 {
                     return Results.Ok(worker);
                 }
-            });
+            })
+                .WithName("GetWorkerByID")
+                .WithTags("Worker", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить работника по ID";
+                    op.Description = "Получение работника по его целочисленному идентификатору";
+                    op.Parameters[0].Description = "Идентификатор работника (Натуральное число)";
+                    return op;
+                })
+                .Produces<Models.Worker>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get All Requests
             app.MapGet("/Requests", async (HttpRequest request, IDatabaseFactory factory) =>
@@ -240,7 +335,68 @@ namespace edemBack
                     return Results.NotFound("Not found requests with that parametrs");
                 }
                 return Results.Ok(result);
-            });
+            })
+                .WithName("GetAllRequest")
+                .WithTags("Request", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить список заявок";
+                    op.Description = "Возвращает все заявки, с возможностью фильтрации по срочности и статусу.";
+
+                    op.Parameters = new List<Microsoft.OpenApi.Models.OpenApiParameter>
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiParameter
+                        {
+                            Name = "Urgency",
+                            In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                            Required = false,
+                            Description = "Срочность заявки для фильтрации заявок по их срочности",
+                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "bool" }
+                        },
+                        new Microsoft.OpenApi.Models.OpenApiParameter
+                        {
+                            Name = "Status",
+                            In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                            Required = false,
+                            Description = "Статус заявки для фильтрации заявок по их статусу",
+                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "string" }
+                        }
+                    };
+
+                    return op;
+                })
+                .Produces<List<Models.Request>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
+
+            //Get One Request
+            app.MapGet("/Request/{id:int}", async (int id, IDatabaseFactory factory) =>
+            {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
+                var request = await IGetFunction.getRequest(id, factory);
+                if (request == null)
+                {
+                    return Results.NotFound("Not found request");
+                }
+                else
+                {
+                    return Results.Ok(request);
+                }
+            })
+                .WithName("GetRequestByID")
+                .WithTags("Request", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить заявку по ID";
+                    op.Description = "Получение заявки по его идентификатору";
+                    op.Parameters[0].Description = "Идентификатор заявки (Натуральное число)";
+                    return op;
+                })
+                .Produces<Models.Request>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get All BookingObject
             app.MapGet("/Bookings", async (HttpRequest request, IDatabaseFactory factory) =>
@@ -286,7 +442,38 @@ namespace edemBack
                     return Results.NotFound("Not found bookings with that parametrs");
                 }
                 return Results.Ok(result);
-            });
+            })
+                .WithName("GetAllBookings")
+                .WithTags("Booking", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить список бронирований";
+                    op.Description = "Возвращает все бронирования, с возможностью фильтрации по офису и по дате.";
+
+                    op.Parameters = new List<Microsoft.OpenApi.Models.OpenApiParameter>
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiParameter
+                        {
+                            Name = "Office",
+                            In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                            Required = false,
+                            Description = "ID офиса для фильтрации бронирований по офису",
+                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
+                        },
+                        new Microsoft.OpenApi.Models.OpenApiParameter
+                        {
+                            Name = "Role",
+                            In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                            Required = false,
+                            Description = "Дата бронирования, при котором оно активно, для фильтрации бронирований по дате",
+                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "Date" }
+                        }
+                    };
+
+                    return op;
+                })
+                .Produces<List<Models.Booking>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get One Booking
             app.MapGet("/Booking/{id:int}", async (int id, IDatabaseFactory factory) =>
@@ -304,7 +491,20 @@ namespace edemBack
                 {
                     return Results.Ok(booking);
                 }
-            });
+            })
+                .WithName("GetBookingByID")
+                .WithTags("Booking", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить бронирование по ID";
+                    op.Description = "Получение объекта по его идентификатору";
+                    op.Parameters[0].Description = "Идентификатор бронирования (Натуральное число)";
+                    return op;
+                })
+                .Produces<Models.Booking>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
+
             //Get One Booking date
             app.MapGet("/BookingDate/{date}", async (DateTime date, IDatabaseFactory factory) =>
             {
@@ -317,7 +517,18 @@ namespace edemBack
                 {
                     return Results.Ok(booking);
                 }    
-            });
+            })
+                .WithName("GetBookingByDate")
+                .WithTags("Booking", "GET")
+                .WithOpenApi(op => 
+                {
+                    op.Summary = "Получить бронирования по дате";
+                    op.Description = "Получение списка бронирований, активных на текущую дату";
+                    op.Parameters[0].Description = "Дата, на которую необходимо бронирование (Формат YYYY-MM-DD)";
+                    return op;
+                })
+                .Produces<List<Models.Booking>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get All Roles 
             app.MapGet("/Roles", async (IDatabaseFactory factory) =>
@@ -331,7 +542,17 @@ namespace edemBack
                 {
                     return Results.Ok(roles);
                 }
-            });
+            })
+                .WithName("GetAllRoles")
+                .WithTags("Role", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить все роли";
+                    op.Description = "Получить список доступных ролей";
+                    return op;
+                })
+                .Produces<List<Models.Role>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get One Role
             app.MapGet("/Role/{id:int}", async (int id, IDatabaseFactory factory) =>
@@ -346,7 +567,19 @@ namespace edemBack
                     return Results.NotFound("Not found role");
                 }
                 return Results.Ok(role);
-            });
+            })
+                .WithName("GetRoleByID")
+                .WithTags("Role", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить роль по ID";
+                    op.Description = "Получить роль по её идентификатору";
+                    op.Parameters[0].Description = "Идентификатор роли (Натуральное число)";
+                    return op;
+                })
+                .Produces<Models.Role>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get Not Importnat Roles
             app.MapGet("/Roles/NoImportant", async (IDatabaseFactory factory) =>
@@ -360,7 +593,17 @@ namespace edemBack
                 {
                     return Results.Ok(roles);
                 }
-            });
+            })
+                .WithName("GetNoImportantRoles")
+                .WithTags("Role", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить роли исполнителей";
+                    op.Description = "Получить список ролей, являющихся исполнительскими";
+                    return op;
+                })
+                .Produces<List<Models.Role>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get All Offices
             app.MapGet("/Offices", async (IDatabaseFactory factory) =>
@@ -374,7 +617,17 @@ namespace edemBack
                 {
                     return Results.Ok(offices);
                 }
-            });
+            })
+                .WithName("GetAllOffices")
+                .WithTags("Office", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить все офисы";
+                    op.Description = "Получить список всех офисов";
+                    return op;
+                })
+                .Produces<List<Models.Office>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get One Status
             app.MapGet("/Status/{id:int}", async (int id, IDatabaseFactory factory) =>
@@ -392,7 +645,19 @@ namespace edemBack
                 {
                     return Results.Ok(status);
                 }
-            });
+            })
+                .WithName("GetStatusByID")
+                .WithTags("Status", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить статус по id";
+                    op.Description = "Получить статус по его идентификатору";
+                    op.Parameters[0].Description = "Идентификатор статуса (Натуральное число)";
+                    return op;
+                })
+                .Produces<Models.Status>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             //Get All Status
             app.MapGet("/Status", async (IDatabaseFactory factory) =>
@@ -406,7 +671,18 @@ namespace edemBack
                 {
                     return Results.Ok(status);
                 }
-            });
+            })
+                .WithName("GetAllStatus")
+                .WithTags("Status", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить все статусы";
+                    op.Description = "Получить список доступных статусов";
+                    return op;
+                })
+                .Produces<List<Models.Status>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
+
             //Create Object
             app.MapPost("/Object", async (Models.Object _object, IDatabaseFactory factory) =>
             {
@@ -420,7 +696,7 @@ namespace edemBack
                         await ICreateFunction.createObject(_object, factory);
                         return Results.Created();
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         return Results.Problem();
                     }
@@ -429,7 +705,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("CreateObject")
+                .WithTags("Object", "POST")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Создать объект";
+                    op.Description = "Добавляет объект в базу данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Create Worker
             app.MapPost("/Worker", async (Models.Worker worker, IDatabaseFactory factory) =>
@@ -453,7 +739,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("CreateWorker")
+                .WithTags("Worker", "POST")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Создать работника";
+                    op.Description = "Добавляет работника в базу данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Create Office
             app.MapPost("/Office", async (Models.Office office, IDatabaseFactory factory) =>
@@ -477,7 +773,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("CreateOffice")
+                .WithTags("Office", "POST")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Создать офис";
+                    op.Description = "Добавляет офис в базу данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Create Role
             app.MapPost("/Role", async (Models.Role role, IDatabaseFactory factory) =>
@@ -501,7 +807,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("CreateRole")
+                .WithTags("Role", "POST")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Создать роль";
+                    op.Description = "Добавляет роль в базу данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Create Request
             app.MapPost("/Request", async (Models.Request request, IDatabaseFactory factory) =>
@@ -525,7 +841,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("CreateRequest")
+                .WithTags("Request", "POST")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Создать заявку";
+                    op.Description = "Добавляет заявку в базу данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Create Booking
             app.MapPost("/Booking", async (Models.Booking booking, IDatabaseFactory factory) =>
@@ -553,7 +879,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("CreateBooking")
+                .WithTags("Booking", "POST")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Создать бронирование";
+                    op.Description = "Добавляет бронирование в базу данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
             //Create Additional
             app.MapPost("/Additionally", async (List<Models.Additionally> additionally, IDatabaseFactory factory) =>
             {
@@ -579,7 +915,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("CreateAdditionally")
+                .WithTags("Additionally", "POST")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Создать дополнительные параметры объекта";
+                    op.Description = "Добавляет список дополнительных параметров объекта в базу данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Update Worker
             app.MapPut("/UpdateWorker", async (Models.Worker worker, IDatabaseFactory factory) =>
@@ -603,7 +949,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("UpdateWorker")
+                .WithTags("Worker", "PUT")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Обновить работника";
+                    op.Description = "Обновляет запись работника в базе данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Update Request
             app.MapPut("/UpdateRequest", async (Models.Request request, IDatabaseFactory factory) =>
@@ -627,7 +983,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("UpdateRequest")
+                .WithTags("Request", "PUT")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Обновить заявку";
+                    op.Description = "Обновляет запись заявки в базе данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Update Booking
             app.MapPut("/UpdateBooking", async (Models.Booking booking, IDatabaseFactory factory) =>
@@ -651,7 +1017,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("UpdateBooking")
+                .WithTags("Booking", "PUT")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Обновить бронирование";
+                    op.Description = "Обновляет запись бронирования в базе данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Update Object
             app.MapPut("/UpdateObject", async (Models.Object _object, IDatabaseFactory factory) =>
@@ -675,7 +1051,17 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("UpdateObject")
+                .WithTags("Object", "PUT")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Обновить объект";
+                    op.Description = "Обновляет запись объекта в базе данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Update Worker password
             /*app.MapPatch("/UpdatePassword/{id: int}", (int id, string password) =>
@@ -689,41 +1075,96 @@ namespace edemBack
             {
                 await IDeleteFunctions.DeleteWorker(id, factory);
                 return Results.NoContent();
-            });
+            })
+                .WithName("DeleteWorker")
+                .WithTags("Worker", "DELETE")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Удалить работника";
+                    op.Description = "Удаляет запись работника в базе данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent);
 
             //Delete Object
             app.MapDelete("/Object/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
                 await IDeleteFunctions.DeleteObject(id, factory);
                 return Results.NoContent();
-            });
+            })
+                .WithName("DeleteObject")
+                .WithTags("Object", "DELETE")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Удалить объект";
+                    op.Description = "Удаляет запись объекта из базы данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent);
 
             //Delete Booking
             app.MapDelete("/Booking/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
                 await IDeleteFunctions.DeleteBooking(id, factory);
                 return Results.NoContent();
-            });
+            })
+                .WithName("DeleteBooking")
+                .WithTags("Booking", "DELETE")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Удалить бронирование";
+                    op.Description = "Удаляет запись бронирования из базы данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent);
 
             //Delete Office
             app.MapDelete("/Office/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
                 await IDeleteFunctions.DeleteOffice(id, factory);
                 return Results.NoContent();
-            });
+            })
+                .WithName("DeleteOffice")
+                .WithTags("Office", "DELETE")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Удалить офис";
+                    op.Description = "Удаляет запись офиса из базы данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent);
 
             //Delete Request
             app.MapDelete("/Request/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
                 await IDeleteFunctions.DeleteRequest(id, factory);
                 return Results.NoContent();
-            });
+            })
+                .WithName("DeleteRequest")
+                .WithTags("Request", "DELETE")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Удалить заявку";
+                    op.Description = "Удаляет запись заявки из базы данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent);
+
             //Delete Role
             app.MapDelete("/Role/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
                 await IDeleteFunctions.DeleteRole(id, factory);
                 return Results.NoContent();
-            });
+            })
+                .WithName("DeleteRole")
+                .WithTags("Role", "DELETE")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Удалить роль";
+                    op.Description = "Удаляет запись роли из базы данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent);
 
             //Auth
             app.MapPost("/Auth", async (AuthRequest request, IDatabaseFactory factory) =>
@@ -770,12 +1211,26 @@ namespace edemBack
                 {
                     return Results.BadRequest();
                 }
-            });
+            })
+                .WithName("Authorization")
+                .WithTags("Authorization", "POST")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Авторизация";
+                    op.Description = "Авторизация сотрудника по его логину (номеру телефона) и паролю";
+                    return op;
+                })
+                .Produces<(int, List<Models.Role>?)>(StatusCodes.Status202Accepted)
+                .Produces(StatusCodes.Status400BadRequest);
 
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI(); // по умолчанию будет на /swagger
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "My Minimal API V1");
+                    options.RoutePrefix = string.Empty; // Стартовая страница = Swagger
+                }); // по умолчанию будет на /swagger
             }
 
             app.Run();

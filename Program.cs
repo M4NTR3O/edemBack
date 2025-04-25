@@ -9,7 +9,7 @@ using System.Security.Cryptography;
 
 namespace edemBack
 {
-    public class Program: IGetFunction, ICreateFunction, IUpdateFunction, IDeleteFunctions
+    public class Program : IGetFunction, ICreateFunction, IUpdateFunction, IDeleteFunctions
     {
         public static void Main(string[] args)
         {
@@ -220,13 +220,13 @@ namespace edemBack
                     if (parsedRoleId)
                     {
                         workersQuery = workersQuery.Where(
-                            x => x.Id_Role== id_role);
+                            x => x.Id_Role == id_role);
                     }
                 }
                 //result list
                 var result = workersQuery.ToList();
                 //check empty list
-                if(result.Count == 0)
+                if (result.Count == 0)
                 {
                     return Results.NoContent();
                 }
@@ -300,10 +300,10 @@ namespace edemBack
                 //parametrs filter (подумать над office_id)
                 int object_id = -1;
                 bool urgency = false;
-                string? status = null;
+                int status = -1;
                 //list item
                 List<Models.Request> requests = await IGetFunction.getAllRequest(factory);
-                
+
                 if (requests.Count == 0)
                 {
                     return Results.NoContent();
@@ -313,12 +313,17 @@ namespace edemBack
                 //status
                 if (request.Query.ContainsKey("Status"))
                 {
-                    status = request.Query["Status"];
-                    if (status != null)
+                    var parsedStatus = int.TryParse(request.Query["Status"], out status);
+                    if (parsedStatus)
                     {
                         requestsQuery = requestsQuery.Where(
                             x => x.Status == status);
                     }
+                    //замена id на текст?!
+                    //foreach (var req in requestsQuery)
+                    //{
+
+                    //}
                 }
                 //urgency
                 if (request.Query.ContainsKey("Urgency"))
@@ -537,11 +542,11 @@ namespace edemBack
                 else
                 {
                     return Results.Ok(booking);
-                }    
+                }
             })
                 .WithName("GetBookingByDate")
                 .WithTags("Booking", "GET")
-                .WithOpenApi(op => 
+                .WithOpenApi(op =>
                 {
                     op.Summary = "Получить бронирования по дате";
                     op.Description = "Получение списка бронирований, активных на текущую дату";
@@ -921,7 +926,7 @@ namespace edemBack
                 {
                     try
                     {
-                        foreach(var additional in additionally)
+                        foreach (var additional in additionally)
                         {
                             await ICreateFunction.createAdditional(additional, factory);
                         }
@@ -1190,7 +1195,7 @@ namespace edemBack
             //Auth Проверил с хэшированием на одном пользователе
             app.MapPost("/Auth", async (AuthRequest request, IDatabaseFactory factory) =>
             {
-                List<string> importnantRoles = ["Директор","Администратор", "Оператор", "Менеджер"];
+                List<string> importnantRoles = ["Директор", "Администратор", "Оператор", "Менеджер"];
                 var validationContext = new ValidationContext(request);
                 var validationResults = new List<ValidationResult>();
                 var isValid = Validator.TryValidateObject(request, validationContext, validationResults, true);
@@ -1247,7 +1252,7 @@ namespace edemBack
             app.MapGet("/HashPass", async (IDatabaseFactory factory) =>
             {
                 var workers = await IGetFunction.getAllWorker(factory);
-                foreach(var worker in workers)
+                foreach (var worker in workers)
                 {
                     await IUpdateFunction.UpdatePassword(worker.Id, worker.Password, factory);
                 }

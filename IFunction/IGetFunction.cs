@@ -48,11 +48,12 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 Models.Object? _object = null;
-                string query = $"SELECT `id_object`, `office_id`, `street`, `house`, `apartment`, `rooms`, `status`, `area`, `kitchen`, `balcony` FROM `Object` WHERE `id_object` = {id};";
+                string query = @"SELECT `id_object`, `office_id`, `street`, `house`, `apartment`, `rooms`, `status`, `area`, `kitchen`, `balcony` FROM `Object` WHERE `id_object` = @id;";
                 using(var command = new MySqlCommand(query, connection))
                 {
+                    command.Parameters.AddWithValue("@id", id);
                     var reader = await command.ExecuteReaderAsync();
-                
+                    
                     while (await reader.ReadAsync())
                     {
                         _object = new Models.Object
@@ -154,9 +155,10 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 Models.Role? role = null;
-                string query = $"SELECT `id_role`, `name`, `salary` FROM `Role` WHERE `id_role`={id};";
+                string query = @"SELECT `id_role`, `name`, `salary` FROM `Role` WHERE `id_role`= @id;";
                 using(var command = new MySqlCommand(query, connection))
                 {
+                    command.Parameters.AddWithValue("@id", id);
                     var reader = await command.ExecuteReaderAsync();
 
                     while (await reader.ReadAsync())
@@ -195,7 +197,7 @@ namespace edemBack.IFunction
                                 Role_Id = int.Parse(reader[1].ToString()!),
                                 Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
                                 Object_Id = int.Parse(reader[3].ToString()!),
-                                Status = reader[4].ToString()!,
+                                Status = int.Parse(reader[4].ToString()!),
                                 Urgency = bool.Parse(reader[5].ToString()!)
                             };
                             requests.Add(oneRequest);
@@ -215,9 +217,10 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 Models.Request? request = null;
-                string query = $"SELECT `id_request`, `role_id`, `worker_id`, `object_id`, `status`, `urgency` FROM `Request` WHERE `id_request` = {id} ;";
+                string query = @"SELECT `id_request`, `role_id`, `worker_id`, `object_id`, `status`, `urgency` FROM `Request` WHERE `id_request` = @id;";
                 using (var command = new MySqlCommand(query, connection))
                 {
+                    command.Parameters.AddWithValue("@id", id);
                     var reader = await command.ExecuteReaderAsync();
                     await reader.ReadAsync();
                     request = new Models.Request
@@ -226,7 +229,7 @@ namespace edemBack.IFunction
                         Role_Id = int.Parse(reader[1].ToString()!),
                         Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
                         Object_Id = int.Parse(reader[3].ToString()!),
-                        Status = reader[4].ToString()!,
+                        Status = int.Parse(reader[4].ToString()!),
                         Urgency = bool.Parse(reader[5].ToString()!)
                     };
                 }
@@ -273,9 +276,10 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 Models.Booking? booking = null;
-                string query = $"SELECT `id_booking`, `object_id`, `date_start`, `date_end`, `Status`.`name` FROM `Object_Booking` INNER JOIN `Status` ON `Object_Booking`.`status` = `Status`.`id_status` WHERE `id_booking` = {id} ;";
+                string query = @"SELECT `id_booking`, `object_id`, `date_start`, `date_end`, `Status`.`name` FROM `Object_Booking` INNER JOIN `Status` ON `Object_Booking`.`status` = `Status`.`id_status` WHERE `id_booking` = @id ;";
                 using (var command = new MySqlCommand(query, connection))
                 {
+                    command.Parameters.AddWithValue("@id", id);
                     var reader = await command.ExecuteReaderAsync();
                     await reader.ReadAsync();
                     booking = new Models.Booking
@@ -359,9 +363,10 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 List<Models.Additionally> additionally = new List<Models.Additionally>();
-                string query = $"SELECT `id_object`, `name_parametr`, `value` FROM `Additionally` WHERE `id_object` = {id};";
+                string query = @"SELECT `id_object`, `name_parametr`, `value` FROM `Additionally` WHERE `id_object` = @id;";
                 using (var command = new MySqlCommand(query, connection))
                 {
+                    command.Parameters.AddWithValue("@id", id);
                     var reader = await command.ExecuteReaderAsync();
 
                     while (reader.Read())
@@ -415,9 +420,10 @@ namespace edemBack.IFunction
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                string query = @$"SELECT id_worker, phoneNumber, password FROM Worker WHERE phoneNumber = {login};";
+                string query = @"SELECT id_worker, phoneNumber, password FROM Worker WHERE phoneNumber = @login;";
                 using (var command = new MySqlCommand(query, connection))
                 {
+                    command.Parameters.AddWithValue("@login", login);
                     var reader = await command.ExecuteReaderAsync();
                     if (await reader.ReadAsync())
                     {

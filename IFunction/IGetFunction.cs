@@ -421,7 +421,8 @@ namespace edemBack.IFunction
                     var reader = await command.ExecuteReaderAsync();
                     if (await reader.ReadAsync())
                     {
-                        if (reader[2].ToString() == password/*PasswordHasher.Verify(password, reader[2].ToString()!)*/)
+                        bool valid = PasswordHasher.Verify(password, reader[2].ToString()!);
+                        if (valid /*reader[2].ToString() == password*/)
                         {
                             int id = Convert.ToInt32(reader[0].ToString()!);
                             await connection.CloseAsync();

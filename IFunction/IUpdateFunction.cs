@@ -44,6 +44,7 @@ namespace edemBack.IFunction
                     command.Parameters.Add("@Birthday", MySqlDbType.Date).Value = worker.Birthday.Date;
                     command.Parameters.AddWithValue("@Role_Id", worker.Id_Role);
                     command.Parameters.AddWithValue("@Office_Id", worker.Id_Office);
+                    //Сделать проверку на пароль, чтобы не двоить хэширование (возможно запретить изменение пароля в update)
                     command.Parameters.AddWithValue("@Password", worker.Password);
                     command.Parameters.AddWithValue("@Id", worker.Id);
 
@@ -59,10 +60,11 @@ namespace edemBack.IFunction
             var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
+                string hashPass = PasswordHasher.Hash(password);
                 await connection.OpenAsync();
                 using (var command = new MySqlCommand(@"UPDATE `Worker` SET password = @Password WHERE id_worker = @Id_worker;", connection))
                 {
-                    command.Parameters.AddWithValue("@Password", password);
+                    command.Parameters.AddWithValue("@Password", hashPass);
                     command.Parameters.AddWithValue("@Id_worker", id);
 
                     await command.ExecuteNonQueryAsync();

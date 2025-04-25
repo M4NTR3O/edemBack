@@ -57,7 +57,7 @@ namespace edemBack.IFunction
                     command.Parameters.Add("@Birthday", MySqlDbType.Date).Value = worker.Birthday.Date;
                     command.Parameters.AddWithValue("@Id_Role", worker.Id_Role);
                     command.Parameters.AddWithValue("@Id_Office", worker.Id_Office);
-                    command.Parameters.AddWithValue("@Password", worker.Password);
+                    command.Parameters.AddWithValue("@Password", PasswordHasher.Hash(worker.Password));
 
                     await command.ExecuteNonQueryAsync();
                 }

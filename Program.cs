@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using Microsoft.AspNetCore.OpenApi;
+using System.Security.Cryptography;
 
 namespace edemBack
 {
@@ -60,7 +61,7 @@ namespace edemBack
                 var objectsQuery = objects.AsQueryable();
                 if (objects.Count == 0)
                 {
-                    Results.NotFound("Not found objects");
+                    return Results.NoContent();
                 }
                 //filters
                 //office_id
@@ -106,7 +107,7 @@ namespace edemBack
                 var result = objectsQuery.ToList();
                 if (result.Count == 0)
                 {
-                    return Results.NotFound("Not found objects with that parametrs");
+                    return Results.NoContent();
                 }
                 return Results.Ok(result);
             })
@@ -141,7 +142,7 @@ namespace edemBack
                                 In = Microsoft.OpenApi.Models.ParameterLocation.Query,
                                 Required = false,
                                 Description = "Наличие балкона для фильтрации объектов по раличию балкона",
-                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "bool" }
+                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "boolean" }
                             },
                             new Microsoft.OpenApi.Models.OpenApiParameter
                             {
@@ -149,14 +150,14 @@ namespace edemBack
                                 In = Microsoft.OpenApi.Models.ParameterLocation.Query,
                                 Required = false,
                                 Description = "Наличие кухни для фильтрации объектов по наличию кухни",
-                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "bool" }
+                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "boolean" }
                             }
                         };
 
                     return op;
                 })
                 .Produces<List<Models.Object>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get one object with ID
             app.MapGet("/Object/{id:int}", async (int id, IDatabaseFactory factory) =>
@@ -168,7 +169,7 @@ namespace edemBack
                 var _object = await IGetFunction.getObject(id, factory);
                 if (_object == null)
                 {
-                    return Results.NotFound("Not found object with that id");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -186,7 +187,7 @@ namespace edemBack
                 })
                 .Produces<Models.Object>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get All Workers
             app.MapGet("/Workers", async (HttpRequest request, IDatabaseFactory factory) =>
@@ -198,7 +199,7 @@ namespace edemBack
                 var workers = await IGetFunction.getAllWorker(factory);
                 if (workers.Count == 0)
                 {
-                    return Results.NotFound("Not found workers");
+                    return Results.NoContent();
                 }
                 var workersQuery = workers.AsQueryable();
                 //filters
@@ -227,7 +228,7 @@ namespace edemBack
                 //check empty list
                 if(result.Count == 0)
                 {
-                    return Results.NotFound("Not found workers with that parametrs");
+                    return Results.NoContent();
                 }
                 return Results.Ok(result);
             })
@@ -261,9 +262,9 @@ namespace edemBack
                 return op;
             })
                 .Produces<List<Models.Worker>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
-            //Get One Worker with ID
+            //Get One Worker with ID //Подумать о необходимости возвращать нехэшированный пароль
             app.MapGet("/Worker/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
@@ -273,7 +274,7 @@ namespace edemBack
                 var worker = await IGetFunction.getWorker(id, factory);
                 if (worker == null)
                 {
-                    return Results.NotFound("Not found worker");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -291,12 +292,13 @@ namespace edemBack
                 })
                 .Produces<Models.Worker>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get All Requests
             app.MapGet("/Requests", async (HttpRequest request, IDatabaseFactory factory) =>
             {
                 //parametrs filter (подумать над office_id)
+                int object_id = -1;
                 bool urgency = false;
                 string? status = null;
                 //list item
@@ -304,7 +306,7 @@ namespace edemBack
                 
                 if (requests.Count == 0)
                 {
-                    return Results.NotFound("Not found requests");
+                    return Results.NoContent();
                 }
                 var requestsQuery = requests.AsQueryable();
                 //filters
@@ -318,6 +320,7 @@ namespace edemBack
                             x => x.Status == status);
                     }
                 }
+                //urgency
                 if (request.Query.ContainsKey("Urgency"))
                 {
                     var parsedUrgency = bool.TryParse(request.Query["Urgency"], out urgency);
@@ -327,12 +330,22 @@ namespace edemBack
                             x => x.Urgency == urgency);
                     }
                 }
+                //object_id
+                if (request.Query.ContainsKey("Object"))
+                {
+                    var parsedObject = int.TryParse(request.Query["Object"], out object_id);
+                    if (parsedObject)
+                    {
+                        requestsQuery = requestsQuery.Where(
+                            x => x.Object_Id == object_id);
+                    }
+                }
                 //result list
                 var result = requestsQuery.ToList();
                 //check empty list
                 if (result.Count == 0)
                 {
-                    return Results.NotFound("Not found requests with that parametrs");
+                    return Results.NoContent();
                 }
                 return Results.Ok(result);
             })
@@ -351,7 +364,7 @@ namespace edemBack
                             In = Microsoft.OpenApi.Models.ParameterLocation.Query,
                             Required = false,
                             Description = "Срочность заявки для фильтрации заявок по их срочности",
-                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "bool" }
+                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "boolean" }
                         },
                         new Microsoft.OpenApi.Models.OpenApiParameter
                         {
@@ -360,13 +373,21 @@ namespace edemBack
                             Required = false,
                             Description = "Статус заявки для фильтрации заявок по их статусу",
                             Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "string" }
+                        },
+                        new Microsoft.OpenApi.Models.OpenApiParameter
+                        {
+                            Name = "Object",
+                            In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                            Required = false,
+                            Description = "Идентификатор объекта для фильтрации заявок по объектам",
+                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
                         }
                     };
 
                     return op;
                 })
                 .Produces<List<Models.Request>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get One Request
             app.MapGet("/Request/{id:int}", async (int id, IDatabaseFactory factory) =>
@@ -378,7 +399,7 @@ namespace edemBack
                 var request = await IGetFunction.getRequest(id, factory);
                 if (request == null)
                 {
-                    return Results.NotFound("Not found request");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -396,7 +417,7 @@ namespace edemBack
                 })
                 .Produces<Models.Request>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get All BookingObject
             app.MapGet("/Bookings", async (HttpRequest request, IDatabaseFactory factory) =>
@@ -408,7 +429,7 @@ namespace edemBack
                 var bookingList = await IGetFunction.getAllBooking(factory);
                 if (bookingList.Count == 0)
                 {
-                    return Results.NotFound("Not found booking");
+                    return Results.NoContent();
                 }
                 var bookingQuery = bookingList.AsQueryable();
                 //filters
@@ -439,7 +460,7 @@ namespace edemBack
                 //check empty list
                 if (result.Count == 0)
                 {
-                    return Results.NotFound("Not found bookings with that parametrs");
+                    return Results.NoContent();
                 }
                 return Results.Ok(result);
             })
@@ -473,7 +494,7 @@ namespace edemBack
                     return op;
                 })
                 .Produces<List<Models.Booking>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get One Booking
             app.MapGet("/Booking/{id:int}", async (int id, IDatabaseFactory factory) =>
@@ -485,7 +506,7 @@ namespace edemBack
                 var booking = await IGetFunction.getBooking(id, factory);
                 if (booking == null)
                 {
-                    return Results.NotFound("Not found booking");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -503,7 +524,7 @@ namespace edemBack
                 })
                 .Produces<Models.Booking>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get One Booking date
             app.MapGet("/BookingDate/{date}", async (DateTime date, IDatabaseFactory factory) =>
@@ -511,7 +532,7 @@ namespace edemBack
                 var booking = await IGetFunction.getBookingForDate(date, factory);
                 if (booking == null)
                 {
-                    return Results.NotFound("Not found booking");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -528,7 +549,7 @@ namespace edemBack
                     return op;
                 })
                 .Produces<List<Models.Booking>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get All Roles 
             app.MapGet("/Roles", async (IDatabaseFactory factory) =>
@@ -536,7 +557,7 @@ namespace edemBack
                 var roles = await IGetFunction.getAllRoles(factory);
                 if (roles.Count == 0)
                 {
-                    return Results.NotFound("Not found roles");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -552,7 +573,7 @@ namespace edemBack
                     return op;
                 })
                 .Produces<List<Models.Role>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get One Role
             app.MapGet("/Role/{id:int}", async (int id, IDatabaseFactory factory) =>
@@ -564,7 +585,7 @@ namespace edemBack
                 var role = await IGetFunction.getRole(id, factory);
                 if (role == null)
                 {
-                    return Results.NotFound("Not found role");
+                    return Results.NoContent();
                 }
                 return Results.Ok(role);
             })
@@ -579,7 +600,7 @@ namespace edemBack
                 })
                 .Produces<Models.Role>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get Not Importnat Roles
             app.MapGet("/Roles/NoImportant", async (IDatabaseFactory factory) =>
@@ -587,7 +608,7 @@ namespace edemBack
                 var roles = await IGetFunction.getNotImportnantRoles(factory);
                 if (roles.Count == 0)
                 {
-                    return Results.NotFound("Not found roles");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -603,7 +624,7 @@ namespace edemBack
                     return op;
                 })
                 .Produces<List<Models.Role>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get All Offices
             app.MapGet("/Offices", async (IDatabaseFactory factory) =>
@@ -611,7 +632,7 @@ namespace edemBack
                 var offices = await IGetFunction.getAllOffice(factory);
                 if (offices.Count == 0)
                 {
-                    return Results.NotFound("Not found offices");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -627,7 +648,7 @@ namespace edemBack
                     return op;
                 })
                 .Produces<List<Models.Office>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get One Status
             app.MapGet("/Status/{id:int}", async (int id, IDatabaseFactory factory) =>
@@ -639,7 +660,7 @@ namespace edemBack
                 var status = await IGetFunction.getOneStatus(id, factory);
                 if (status == null)
                 {
-                    return Results.NotFound($"Not found sttus with id {id}");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -657,7 +678,7 @@ namespace edemBack
                 })
                 .Produces<Models.Status>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Get All Status
             app.MapGet("/Status", async (IDatabaseFactory factory) =>
@@ -665,7 +686,7 @@ namespace edemBack
                 var status = await IGetFunction.getAllStatus(factory);
                 if (status.Count == 0)
                 {
-                    return Results.NotFound("Not found statuses");
+                    return Results.NoContent();
                 }
                 else
                 {
@@ -681,7 +702,7 @@ namespace edemBack
                     return op;
                 })
                 .Produces<List<Models.Status>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound);
+                .Produces(StatusCodes.Status204NoContent);
 
             //Create Object
             app.MapPost("/Object", async (Models.Object _object, IDatabaseFactory factory) =>
@@ -1166,7 +1187,7 @@ namespace edemBack
                 })
                 .Produces(StatusCodes.Status204NoContent);
 
-            //Auth
+            //Auth Проверил с хэшированием на одном пользователе
             app.MapPost("/Auth", async (AuthRequest request, IDatabaseFactory factory) =>
             {
                 List<string> importnantRoles = ["Директор","Администратор", "Оператор", "Менеджер"];
@@ -1177,7 +1198,6 @@ namespace edemBack
                 {
                     try
                     {
-                        //string password = PasswordHasher.Hash(request.Password);
                         int id = await IGetFunction.getAuth(request.Login, request.Password, factory);
                         if (id == 0)
                         {
@@ -1222,6 +1242,16 @@ namespace edemBack
                 })
                 .Produces<(int, List<Models.Role>?)>(StatusCodes.Status202Accepted)
                 .Produces(StatusCodes.Status400BadRequest);
+
+            //Убрать данный эндпоинт
+            app.MapGet("/HashPass", async (IDatabaseFactory factory) =>
+            {
+                var workers = await IGetFunction.getAllWorker(factory);
+                foreach(var worker in workers)
+                {
+                    await IUpdateFunction.UpdatePassword(worker.Id, worker.Password, factory);
+                }
+            });
 
             if (app.Environment.IsDevelopment())
             {

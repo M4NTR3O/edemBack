@@ -15,7 +15,7 @@ namespace edemBack.IFunction
                 await connection.OpenAsync();
                 using (var command = new MySqlCommand(@"UPDATE `Request` SET role_id = @Role_Id, object_id = @Object_Id, worker_id = @WorkerId, status = @Status, urgency = @Urgency WHERE id_request = @RequestId;", connection))
                 {
-                    command.Parameters.AddWithValue("@Role_Id", request.Role_Id);
+                    command.Parameters.AddWithValue("@Type_Id", request.Type_Work);
                     command.Parameters.AddWithValue("@Object_Id", request.Object_Id);
                     command.Parameters.AddWithValue("@WorkerId", request.Worker_Id);
                     command.Parameters.AddWithValue("@Status", request.Status);

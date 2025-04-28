@@ -97,7 +97,7 @@ namespace edemBack.IFunction
                             Id = int.Parse(reader[0].ToString()!),
                             Surname = reader[1].ToString()!,
                             Name = reader[2].ToString()!,
-                            Fathername = reader[3].ToString()!,
+                            Fathername = reader[3].ToString()! != null ? reader[3].ToString() : null,
                             PhoneNumber = reader[4].ToString()!,
                             Email = reader[5].ToString()!,
                             Birthday = DateTime.Parse(reader[6].ToString()!),
@@ -132,7 +132,7 @@ namespace edemBack.IFunction
                             Id = int.Parse(reader[0].ToString()!),
                             Surname = reader[1].ToString()!,
                             Name = reader[2].ToString()!,
-                            Fathername = reader[3].ToString()!,
+                            Fathername = reader[3].ToString()! != null ? reader[3].ToString() : null,
                             PhoneNumber = reader[4].ToString()!,
                             Email = reader[5].ToString()!,
                             Birthday = DateTime.Parse(reader[6].ToString()!),
@@ -183,7 +183,7 @@ namespace edemBack.IFunction
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                string query = "SELECT `id_request`, `role_id`, `worker_id`, `object_id`, `status`, `urgency` FROM `Request`;";
+                string query = "SELECT `id_request`, `type_id`, `worker_id`, `object_id`, `status`, `urgency`, `description` FROM `Request`;";
                 List<Models.Request> requests = new List<Models.Request>();
                 using(var command = new MySqlCommand(query, connection))
                 {
@@ -194,11 +194,15 @@ namespace edemBack.IFunction
                             Models.Request oneRequest = new Models.Request
                             {
                                 Request_Id = int.Parse(reader[0].ToString()!),
-                                Role_Id = int.Parse(reader[1].ToString()!),
-                                Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
+                                Type_Work = int.Parse(reader[1].ToString()!).ToString(),
+                                //Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
+                                Worker_Id = 0,
                                 Object_Id = int.Parse(reader[3].ToString()!),
-                                Status = int.Parse(reader[4].ToString()!),
-                                Urgency = bool.Parse(reader[5].ToString()!)
+                                Status = int.Parse(reader[4].ToString()!).ToString(),
+                                Urgency = bool.Parse(reader[5].ToString()!),
+                                Description = reader[6].ToString()!,
+                                Photos = null,
+                                Roles_Id = null
                             };
                             requests.Add(oneRequest);
                         }
@@ -217,20 +221,23 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 Models.Request? request = null;
-                string query = @"SELECT `id_request`, `role_id`, `worker_id`, `object_id`, `status`, `urgency` FROM `Request` WHERE `id_request` = @id;";
+                string query = @"SELECT `id_request`, `type_id`, `worker_id`, `object_id`, `status`, `urgency`, `description` FROM `Request` WHERE `id_request` = @id;";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@id", id);
                     var reader = await command.ExecuteReaderAsync();
                     await reader.ReadAsync();
+                    Console.WriteLine(reader[2].ToString()! == null);
                     request = new Models.Request
                     {
                         Request_Id = int.Parse(reader[0].ToString()!),
-                        Role_Id = int.Parse(reader[1].ToString()!),
-                        Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
+                        Type_Work = reader[1].ToString()!,
+                        //Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
+                        Worker_Id = 0,
                         Object_Id = int.Parse(reader[3].ToString()!),
-                        Status = int.Parse(reader[4].ToString()!),
-                        Urgency = bool.Parse(reader[5].ToString()!)
+                        Status = reader[4].ToString()!,
+                        Urgency = bool.Parse(reader[5].ToString()!),
+                        Description = reader[6].ToString()!,
                     };
                 }
                 await connection.CloseAsync();
@@ -524,5 +531,58 @@ namespace edemBack.IFunction
                 return roles;
             }
         }
+
+        //Get Types Work
+        public static async Task<List<Models.TypeWork>> getTypesWorks(IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.TypeWork> typeWorks = new List<TypeWork>();
+                string query = "SELECT `id_work`, `name` FROM `Type_Work";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        Models.TypeWork type = new TypeWork
+                        {
+                            Id_Work = int.Parse(reader[0].ToString()!),
+                            Name = reader[1].ToString()!
+                        };
+                        typeWorks.Add(type);
+                    }
+                }
+                await connection.CloseAsync();
+                return typeWorks;
+            }
+        }
+        //Get One Types Work
+        public static async Task<Models.TypeWork> getOneTypesWorks(IDatabaseFactory factory, int id)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                Models.TypeWork typeWork = new TypeWork();
+                string query = @"SELECT `id_work`, `name` FROM `Type_Work` WHERE `id_work`=@id";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", id);
+                    var reader = await command.ExecuteReaderAsync();
+                    await reader.ReadAsync();
+                    typeWork = new TypeWork
+                    {
+                        Id_Work = int.Parse(reader[0].ToString()!),
+                        Name = reader[1].ToString()!
+                    };
+                }
+                await connection.CloseAsync();
+                return typeWork;
+            }
+        }
+        //Get Work_Role As Number Id
+        
     }
 }

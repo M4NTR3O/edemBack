@@ -300,7 +300,10 @@ namespace edemBack
                 //parametrs filter (подумать над office_id)
                 int object_id = -1;
                 bool urgency = false;
-                int status = -1;
+                string status = "-1";
+                bool text_type = false;
+                int office_id = -1;
+                bool text_status = false;
                 //list item
                 List<Models.Request> requests = await IGetFunction.getAllRequest(factory);
 
@@ -313,17 +316,35 @@ namespace edemBack
                 //status
                 if (request.Query.ContainsKey("Status"))
                 {
-                    var parsedStatus = int.TryParse(request.Query["Status"], out status);
+                    status = request.Query["Status"]!;
+                    requestsQuery = requestsQuery.Where(
+                        x => x.Status == status);
+                }
+                //text_status
+                if (request.Query.ContainsKey("Text_Status"))
+                {
+                    var parsedStatus = bool.TryParse(request.Query["Text_Status"], out text_status);
                     if (parsedStatus)
                     {
-                        requestsQuery = requestsQuery.Where(
-                            x => x.Status == status);
+                        foreach(var row in requestsQuery)
+                        {
+                            Models.Status status1 = await IGetFunction.getOneStatus(int.Parse(row.Status.ToString()!), factory);
+                            row.Status = status1.Name;
+                        }
                     }
-                    //замена id на текст?!
-                    //foreach (var req in requestsQuery)
-                    //{
-
-                    //}
+                }
+                //text_type
+                if (request.Query.ContainsKey("Text_Type"))
+                {
+                    var parsedType = bool.TryParse(request.Query["Text_Type"], out text_type);
+                    if (parsedType)
+                    {
+                        foreach (var row in requestsQuery)
+                        {
+                            Models.TypeWork type = await IGetFunction.getOneTypesWorks(factory, int.Parse(row.Type_Work.ToString()));
+                            row.Type_Work = type.Name;
+                        }
+                    }
                 }
                 //urgency
                 if (request.Query.ContainsKey("Urgency"))
@@ -343,6 +364,15 @@ namespace edemBack
                     {
                         requestsQuery = requestsQuery.Where(
                             x => x.Object_Id == object_id);
+                    }
+                }
+                //office_id Подумать, пока недореализовано
+                if (request.Query.ContainsKey("Office"))
+                {
+                    var parsedOffice = int.TryParse(request.Query["Office"], out office_id);
+                    if (parsedOffice)
+                    {
+                        //requestsQuery = requestsQuery.Where
                     }
                 }
                 //result list
@@ -386,6 +416,22 @@ namespace edemBack
                             Required = false,
                             Description = "Идентификатор объекта для фильтрации заявок по объектам",
                             Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
+                        },
+                        new Microsoft.OpenApi.Models.OpenApiParameter
+                        {
+                            Name = "Text_Status",
+                            In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                            Required = false,
+                            Description = "Флаг для смены идентификатора статуса заявок в текстовый вид",
+                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "boolean" }
+                        },
+                        new Microsoft.OpenApi.Models.OpenApiParameter
+                        {
+                            Name = "Text_Type",
+                            In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                            Required = false,
+                            Description = "Флаг для смены идентификатора типа работы заявок в текстовый вид",
+                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "boolean" }
                         }
                     };
 
@@ -1247,16 +1293,6 @@ namespace edemBack
                 })
                 .Produces<(int, List<Models.Role>?)>(StatusCodes.Status202Accepted)
                 .Produces(StatusCodes.Status400BadRequest);
-
-            //Убрать данный эндпоинт
-            app.MapGet("/HashPass", async (IDatabaseFactory factory) =>
-            {
-                var workers = await IGetFunction.getAllWorker(factory);
-                foreach (var worker in workers)
-                {
-                    await IUpdateFunction.UpdatePassword(worker.Id, worker.Password, factory);
-                }
-            });
 
             if (app.Environment.IsDevelopment())
             {

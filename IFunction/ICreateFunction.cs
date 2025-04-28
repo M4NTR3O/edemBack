@@ -141,13 +141,13 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 string query = @"INSERT INTO Request 
-                            (role_id, worker_id, object_id, status, urgency) 
+                            (type_id, worker_id, object_id, status, urgency) 
                             VALUES 
-                            (@Role_Id, @Worker_Id, @Object_Id, @Status, @Urgency);";
+                            (@Type_Id, @Worker_Id, @Object_Id, @Status, @Urgency);";
 
                 using (var command = new MySqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@Role_Id", request.Role_Id);
+                    command.Parameters.AddWithValue("@Type_Id", request.Type_Work);
                     command.Parameters.AddWithValue("@Worker_Id", (object?)request.Worker_Id ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Object_Id", request.Object_Id);
                     command.Parameters.AddWithValue("@Status", request.Status);

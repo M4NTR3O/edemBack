@@ -6,8 +6,8 @@
     public class Work_Role
     {
         /// <summary>ID работа</summary>
-        string Work { get; set; }
+        public string Work { get; set; }
         /// <summary>ID Роли</summary>
-        string Role { get; set; }
+        public string Role { get; set; }
     }
 }

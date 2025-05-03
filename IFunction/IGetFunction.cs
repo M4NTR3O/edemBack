@@ -17,7 +17,7 @@ namespace edemBack.IFunction
                 {
                     var reader = await command.ExecuteReaderAsync();
                     while (await reader.ReadAsync())
-                    {
+                    { 
                         Models.Object oneObject = new Models.Object
                         {
                             Id = int.Parse(reader[0].ToString()!),
@@ -29,7 +29,8 @@ namespace edemBack.IFunction
                             Status = reader[6].ToString()!,
                             Area = decimal.Parse(reader[7].ToString()!),
                             Kitchen = bool.Parse(reader[8].ToString()!),
-                            Balcony = bool.Parse(reader[9].ToString()!)
+                            Balcony = bool.Parse(reader[9].ToString()!),
+                            Photos = await getPhotoOneObject(int.Parse(reader[0].ToString()!), factory)
                         };
                         objects.Add(oneObject);
                     }
@@ -67,7 +68,8 @@ namespace edemBack.IFunction
                             Status = reader[6].ToString()!,
                             Area = decimal.Parse(reader[7].ToString()!),
                             Kitchen = bool.Parse(reader[8].ToString()!),
-                            Balcony = bool.Parse(reader[9].ToString()!)
+                            Balcony = bool.Parse(reader[9].ToString()!),
+                            Photos = await getPhotoOneObject(int.Parse(reader[0].ToString()!), factory)
                         };
                     }
                 }            
@@ -147,7 +149,7 @@ namespace edemBack.IFunction
             }
             
         }
-
+        //Get Role for Id Role
         public static async Task<Role?> getRole(int id, IDatabaseFactory factory)
         {
             var database = factory.Create();
@@ -160,20 +162,43 @@ namespace edemBack.IFunction
                 {
                     command.Parameters.AddWithValue("@id", id);
                     var reader = await command.ExecuteReaderAsync();
-
-                    while (await reader.ReadAsync())
+                    await reader.ReadAsync();
+                    role = new Models.Role
                     {
-                        role = new Models.Role
-                        {
-                            Role_Id = int.Parse(reader[0].ToString()!),
-                            Name = reader[1].ToString()!,
-                            Salary = int.Parse(reader[2].ToString()!)
-                        };
-                    }
+                        Role_Id = int.Parse(reader[0].ToString()!),
+                        Name = reader[1].ToString()!,
+                        Salary = int.Parse(reader[2].ToString()!)
+                    };
                 }
                 await connection.CloseAsync();
                 return role;
             }          
+        }
+
+        //Get Role for Id Worker
+        public static async Task<Role?> getRoleIdWorker (int id, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                Models.Role? role = null;
+                string query = @"SELECT `role_id`, `Role`.`name`, `Role`.`salary` FROM `Worker` INNER JOIN `Role` ON `Worker`.`role_id` = `Role`.`id_role` WHERE `id_worker`= @id;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", id);
+                    var reader = await command.ExecuteReaderAsync();
+                    await reader.ReadAsync();
+                    role = new Models.Role
+                    {
+                        Role_Id = int.Parse(reader[0].ToString()!),
+                        Name = reader[1].ToString()!,
+                        Salary = int.Parse(reader[2].ToString()!)
+                    };
+                }
+                await connection.CloseAsync();
+                return role;
+            }
         }
 
         //Get Request with filter
@@ -195,8 +220,7 @@ namespace edemBack.IFunction
                             {
                                 Request_Id = int.Parse(reader[0].ToString()!),
                                 Type_Work = int.Parse(reader[1].ToString()!).ToString(),
-                                //Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
-                                Worker_Id = 0,
+                                Worker_Id = (reader[2] != DBNull.Value ? int.Parse(reader[2].ToString()!) : null),
                                 Object_Id = int.Parse(reader[3].ToString()!),
                                 Status = int.Parse(reader[4].ToString()!).ToString(),
                                 Urgency = bool.Parse(reader[5].ToString()!),
@@ -232,8 +256,7 @@ namespace edemBack.IFunction
                     {
                         Request_Id = int.Parse(reader[0].ToString()!),
                         Type_Work = reader[1].ToString()!,
-                        //Worker_Id = (reader[2].ToString()! != null ? int.Parse(reader[2].ToString()!) : null),
-                        Worker_Id = 0,
+                        Worker_Id = (reader[2] == DBNull.Value ? int.Parse(reader[2].ToString()!) : null),
                         Object_Id = int.Parse(reader[3].ToString()!),
                         Status = reader[4].ToString()!,
                         Urgency = bool.Parse(reader[5].ToString()!),
@@ -513,7 +536,7 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 List<Models.Role> roles = new List<Role>();
-                string query = "SELECT `id_role`, `name` FROM `Role` WHERE NOT `id_role` BETWEEN 1 AND 5;";
+                string query = "SELECT `id_role`, `name` FROM `Role` WHERE NOT `id_role` BETWEEN 1 AND 2 AND NOT `id_role` BETWEEN 4 AND 5;";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     var reader = await command.ExecuteReaderAsync();
@@ -559,13 +582,13 @@ namespace edemBack.IFunction
             }
         }
         //Get One Types Work
-        public static async Task<Models.TypeWork> getOneTypesWorks(IDatabaseFactory factory, int id)
+        public static async Task<Models.TypeWork?> getOneTypesWorks(IDatabaseFactory factory, int id)
         {
             var database = factory.Create();
+            Models.TypeWork? typeWork = null;
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                Models.TypeWork typeWork = new TypeWork();
                 string query = @"SELECT `id_work`, `name` FROM `Type_Work` WHERE `id_work`=@id";
                 using (var command = new MySqlCommand(query, connection))
                 {
@@ -579,10 +602,197 @@ namespace edemBack.IFunction
                     };
                 }
                 await connection.CloseAsync();
+            }
+            if (typeWork == null)
+            {
                 return typeWork;
             }
+            else
+            {
+                typeWork.Roles = new List<Role>();
+                using (var connection = database.CreateNewConnection())
+                {
+                    await connection.OpenAsync();
+                    string query = @"SELECT `role_id`, `Role`.`name` FROM `Work_Role` INNER JOIN `Role` ON `Role`.`id_role` = `Work_Role`.`role_id` WHERE `work_id` = @Id";
+                    using (var command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Id", id);
+                        var reader = await command.ExecuteReaderAsync();
+                        while (await reader.ReadAsync())
+                        {
+                            Models.Role role = new Role
+                            {
+                                Role_Id = int.Parse(reader[0].ToString()!),
+                                Name = reader[1].ToString()!
+                            };
+                            typeWork.Roles.Add(role);
+                        }
+                    }
+                    await connection.CloseAsync();
+                }
+            } 
+            return typeWork;
         }
         //Get Work_Role As Number Id
-        
+        public static async Task<List<Models.Work_Role>> getWorkRolesNumber(IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using(var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Work_Role> works_roles = new List<Work_Role>();
+                string query = "SELECT `work_id`, `role_id` FROM `Work_Role`;";
+                using(var command = new MySqlCommand(query, connection))
+                {
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Work_Role work_Role = new Work_Role
+                        {
+                            Work = reader[0].ToString()!,
+                            Role = reader[1].ToString()!
+                        };
+                        works_roles.Add(work_Role);
+                    }
+                }
+                await connection.CloseAsync();
+                return works_roles;
+            }
+        }
+        //Get Work_Role As Text
+        public static async Task<List<Models.Work_Role>> getWorkRolesText(IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Work_Role> works_roles = new List<Work_Role>();
+                string query = "SELECT (`Type_Work`.`name`) AS `work`, `Role`.`name` AS `role` FROM `Work_Role` INNER JOIN `Type_Work` ON `Type_Work`.`id_work` = `Work_Role`.`work_id` INNER JOIN `Role` ON `Role`.`id_role` = `Work_Role`.`role_id`;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Work_Role work_Role = new Work_Role
+                        {
+                            Work = reader[0].ToString()!,
+                            Role = reader[1].ToString()!
+                        };
+                        works_roles.Add(work_Role);
+                    }
+                }
+                await connection.CloseAsync();
+                return works_roles;
+            }
+        }
+        //Get Additional Parametrs For All Role
+        public static async Task<List<Models.Add_Parametrs_Role>> getAddParametrsAllRole(IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Add_Parametrs_Role> adds = new List<Add_Parametrs_Role>();
+                string query = "SELECT `id_parametr`, `role_id`, `parametr` FROM `Add_Parametrs_Role`;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Add_Parametrs_Role add_ = new Add_Parametrs_Role
+                        {
+                            Id_Parametr = int.Parse(reader[0].ToString()!),
+                            Role_Id = int.Parse(reader[1].ToString()!),
+                            Parametr = reader[2].ToString()!
+                        };
+                        adds.Add(add_);
+                    }
+                    await connection.CloseAsync();
+                    return adds;
+                }
+            }
+        }
+        //Get Additional Parametrs For One Role
+        public static async Task<List<Models.Add_Parametrs_Role>> getAddParametrsOneRole(IDatabaseFactory factory, int id)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Add_Parametrs_Role> adds = new List<Add_Parametrs_Role>();
+                string query = @"SELECT `id_parametr`, `role_id`, `parametr` FROM `Add_Parametrs_Role` WHERE `id_role` = @id;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", id);
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Add_Parametrs_Role add_ = new Add_Parametrs_Role
+                        {
+                            Id_Parametr = int.Parse(reader[0].ToString()!),
+                            Role_Id = int.Parse(reader[1].ToString()!),
+                            Parametr = reader[2].ToString()!
+                        };
+                        adds.Add(add_);
+                    }
+                    await connection.CloseAsync();
+                    return adds;
+                }
+            }
+        }
+        //Get Photo_Object
+        public static async Task<List<Models.Photo_Object>> getPhotoObject(IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Photo_Object> photo_Objects = new List<Photo_Object>();
+                string query = "SELECT `photo_id`, `object_id` FROM `Photo_Object`;";
+                using(var command = new MySqlCommand(query, connection))
+                {
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Photo_Object @object = new Photo_Object
+                        {
+                            Photo_id = int.Parse(reader[0].ToString()!),
+                            Object_id = int.Parse(reader[1].ToString()!)
+                        };
+                        photo_Objects.Add(@object);
+                    }
+                }
+                await connection.CloseAsync();
+                return photo_Objects;
+            }
+        }
+
+        //Get Photo_Object for Object
+        public static async Task<List<Models.Photo>> getPhotoOneObject(int id, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Photo> photo_Objects = new List<Photo>();
+                string query = @"SELECT `photo_id`, `Photo`.`url` FROM `Photo_Object` INNER JOIN `Photo` ON `Photo`.`id_photo` = `Photo_Object`.`photo_id` WHERE `object_id`=@id;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", id);
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Photo @object = new Photo
+                        {
+                            Id = int.Parse(reader[0].ToString()!),
+                            Url = reader[1].ToString()!
+                        };
+                        photo_Objects.Add(@object);
+                    }
+                }
+                await connection.CloseAsync();
+                return photo_Objects;
+            }
+        }
     }
 }

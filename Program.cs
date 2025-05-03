@@ -6,6 +6,8 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using Microsoft.AspNetCore.OpenApi;
 using System.Security.Cryptography;
+using Org.BouncyCastle.Ocsp;
+using System.Text.Json;
 
 namespace edemBack
 {
@@ -755,6 +757,54 @@ namespace edemBack
                 .Produces<List<Models.Status>>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status204NoContent);
 
+            //Get Types Works
+            app.MapGet("/TypesWork", async (IDatabaseFactory factory) =>
+            {
+                var typesWorks = await IGetFunction.getTypesWorks(factory);
+                if (typesWorks.Count == 0)
+                {
+                    return Results.NoContent();
+                }
+                else
+                {
+                    return Results.Ok(typesWorks);
+                }
+            })
+                .WithName("GetAllTypesWorks")
+                .WithTags("TypeWork", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить все типы работ";
+                    op.Description = "Получение всех типов работ с их ID и наименованием";
+                    return op;
+                })
+                .Produces<List<Models.TypeWork>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status204NoContent);
+
+            //Get One Types Works
+            app.MapGet("/TypeWork/{id:int}", async (int id, IDatabaseFactory factory) =>
+            {
+                var typeWork = await IGetFunction.getOneTypesWorks(factory, id);
+                if (typeWork != null)
+                {
+                    return Results.Ok(typeWork);
+                }
+                else
+                {
+                    return Results.NoContent();
+                }
+            })
+                .WithName("GetOnrTypeWork")
+                .WithTags("GET", "TypeWork")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Вернуть тип работы";
+                    op.Description = "Вернуть тип работы по идентификатору со списком назначенных ролей на данное задание";
+                    return op;
+                })
+                .Produces<Models.TypeWork>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status204NoContent);
+
             //Create Object
             app.MapPost("/Object", async (Models.Object _object, IDatabaseFactory factory) =>
             {
@@ -788,6 +838,8 @@ namespace edemBack
                 })
                 .Produces(StatusCodes.Status201Created)
                 .Produces(StatusCodes.Status400BadRequest);
+
+            //Create Object With Photos
 
             //Create Worker
             app.MapPost("/Worker", async (Models.Worker worker, IDatabaseFactory factory) =>
@@ -885,7 +937,7 @@ namespace edemBack
                 .WithOpenApi(op =>
                 {
                     op.Summary = "Создать роль";
-                    op.Description = "Добавляет роль в базу данных";
+                    op.Description = "Добавляет роль в базу данных со списком дополнительных параметров (все идентификаторы ставить -1)";
                     return op;
                 })
                 .Produces(StatusCodes.Status201Created)
@@ -962,7 +1014,7 @@ namespace edemBack
                 })
                 .Produces(StatusCodes.Status201Created)
                 .Produces(StatusCodes.Status400BadRequest);
-            //Create Additional
+            //Create Additional (А нужно ли оно? По факту, оно работает при создании объекта)
             app.MapPost("/Additionally", async (List<Models.Additionally> additionally, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(additionally);
@@ -994,6 +1046,40 @@ namespace edemBack
                 {
                     op.Summary = "Создать дополнительные параметры объекта";
                     op.Description = "Добавляет список дополнительных параметров объекта в базу данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Create Type Work
+            app.MapPost("/TypeWork", async (Models.TypeWork type, IDatabaseFactory factory) =>
+            {
+                var validationContext = new ValidationContext(type);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(type, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        await ICreateFunction.createTypeWork(type, factory);
+                        return Results.Created();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            })
+                .WithName("CreateTypeWork")
+                .WithTags("TypeWork", "POST")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Создание краткого описания работы";
+                    op.Description = "Создание типа работы и связи его с ролями";
                     return op;
                 })
                 .Produces(StatusCodes.Status201Created)
@@ -1260,7 +1346,7 @@ namespace edemBack
                         }
                         else
                         {
-                            var role = await IGetFunction.getRole(id, factory);
+                            var role = await IGetFunction.getRoleIdWorker(id, factory);
                             Dictionary<string, object> json = new Dictionary<string, object>();
                             var worker = (await IGetFunction.getWorker(id, factory));
                             json.Add("Worker", worker);

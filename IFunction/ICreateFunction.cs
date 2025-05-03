@@ -9,6 +9,7 @@ namespace edemBack.IFunction
         public static async Task createObject(Models.Object _object, IDatabaseFactory factory)
         {
             var database = factory.Create();
+            long newId;
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -30,8 +31,19 @@ namespace edemBack.IFunction
                     command.Parameters.AddWithValue("@Balcony", _object.Balcony);
 
                     await command.ExecuteNonQueryAsync();
+                    newId = command.LastInsertedId;
                 }
                 await connection.CloseAsync();
+            }
+        }
+        //Create Photos
+        public static async Task createPhotos(Models.Object _object, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = "";
             }
         }
         //Create worker +
@@ -115,6 +127,7 @@ namespace edemBack.IFunction
         public static async Task createRole(Models.Role role, IDatabaseFactory factory)
         {
             var database = factory.Create();
+            long id;
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
@@ -129,8 +142,31 @@ namespace edemBack.IFunction
                     command.Parameters.AddWithValue("@Salary", role.Salary);
 
                     await command.ExecuteNonQueryAsync();
+                    id = command.LastInsertedId;
                 }
                 await connection.CloseAsync();
+            }
+            if (role.add_Parametrs != null)
+            {
+                foreach (var add in role.add_Parametrs)
+                {
+                    using (var connection = database.CreateNewConnection())
+                    {
+                        await connection.OpenAsync();
+                        string query = @"INSERT INTO Add_Parametrs_Role
+                            (role_id, parametr) VALUES
+                            (@Role, @Parametr);";
+                        using (var command = new MySqlCommand(query, connection))
+                        {
+
+                            command.Parameters.AddWithValue("@Role", id);
+                            command.Parameters.AddWithValue("@Parametr", add.Parametr);
+
+                            await command.ExecuteNonQueryAsync();
+                        }
+                        await connection.CloseAsync();
+                    }
+                }
             }
         }
         //create request
@@ -244,6 +280,42 @@ namespace edemBack.IFunction
                 await connection.CloseAsync();
             }
             return true;
+        }
+
+        //create type work
+        public static async Task createTypeWork(Models.TypeWork typeWork, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            long id;
+            using(var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"INSERT INTO Type_Work (name) SET (@Name);";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Name", typeWork.Name);
+
+                    await command.ExecuteNonQueryAsync();
+                    id = command.LastInsertedId;
+                }
+                await connection.CloseAsync();
+            }
+            foreach (Models.Role role in typeWork.Roles)
+            {
+                using (var connection = database.CreateNewConnection())
+                {
+                    await connection.OpenAsync();
+                    string query = @"INSERT INTO Work_Role (work_id, role_id) SET (@Work, @Role);";
+                    using (var command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Work", id);
+                        command.Parameters.AddWithValue("@Role", role.Role_Id);
+
+                        await command.ExecuteNonQueryAsync();
+                    }
+                    await connection.CloseAsync();
+                }
+            }
         }
     }
 }

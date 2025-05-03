@@ -25,5 +25,8 @@
         public bool Kitchen { get; set; }
         /// <summary>Наличие балкона</summary>
         public bool Balcony { get ; set ; }
+
+        ///<summary>Список фотографий</summary>
+        public List<Photo>? Photos { get; set; }
     }
 }

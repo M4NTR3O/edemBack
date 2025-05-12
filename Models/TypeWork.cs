@@ -9,7 +9,9 @@
         public int Id_Work { get; set; }
         /// <summary>Наименование работы</summary>
         public string Name { get; set; }
-        ///Список ролей, которые могут выполнить данный тип задачи
+        ///<summary>Список ролей, которые могут выполнить данный тип задачи</summary>
         public List<Models.Role>? Roles { get; set; }
+        ///<summary>Список ролей (целочисленно), которые могут выполнить данный тип задачи</summary>
+        public List<int>? Roles_Id { get; set; }
     }
 }

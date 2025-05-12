@@ -196,6 +196,7 @@ namespace edemBack
             {
                 //parametrs filter
                 int id_office = 0;
+                List<int> id_roles = new List<int>();
                 int id_role = 0;
                 //list item
                 var workers = await IGetFunction.getAllWorker(factory);
@@ -218,12 +219,31 @@ namespace edemBack
                 //role_id
                 if (request.Query.ContainsKey("Role"))
                 {
-                    var parsedRoleId = int.TryParse(request.Query["Role"], out id_role);
-                    if (parsedRoleId)
+                    Console.WriteLine(request.Query["Role"].Count);
+                    if (request.Query["Role"].Count > 1)
                     {
-                        workersQuery = workersQuery.Where(
-                            x => x.Id_Role == id_role);
+                        foreach(var id in request.Query["Role"])
+                        {
+                            if (int.TryParse(id, out int parsedId))
+                            {
+                                id_roles.Add(parsedId);
+                            }
+                            
+                        }
+                        if (id_roles.Count > 0)
+                        {
+                            workersQuery = workersQuery.Where(x => id_roles.Contains(x.Id_Role));
+                        }
                     }
+                    else
+                    {
+                        var parsedRoleId = int.TryParse(request.Query["Role"], out id_role);
+                        if (parsedRoleId)
+                        {
+                            workersQuery = workersQuery.Where(
+                                x => x.Id_Role == id_role);
+                        }
+                    }   
                 }
                 //result list
                 var result = workersQuery.ToList();
@@ -487,17 +507,18 @@ namespace edemBack
                 var bookingQuery = bookingList.AsQueryable();
                 //filters
                 //office_id
+                /*
                 if (request.Query.ContainsKey("Office_Id"))
                 {
                     var parsedOffice_id = int.TryParse(request.Query["Office_Id"], out office_id);
                     if (parsedOffice_id)
                     {
-                        var bookings = await bookingQuery.ToListAsync();
-                        var objects = await Task.WhenAll(bookings.Select(async x => await IGetFunction.getObject(x.Object_id, factory)));
+
+                        var objects = await Task.WhenAll(bookingQuery.Select(async x => await IGetFunction.getObject(x.Object_id, factory)));
                         bookingQuery = bookingQuery.Where(
                             x => objects.First(o => o.Office_Id == office_id) != null);
                     }
-                }
+                }*/
                 //Date
                 if (request.Query.ContainsKey("Date"))
                 {
@@ -528,7 +549,7 @@ namespace edemBack
                     {
                         new Microsoft.OpenApi.Models.OpenApiParameter
                         {
-                            Name = "Office",
+                            Name = "Office_Id",
                             In = Microsoft.OpenApi.Models.ParameterLocation.Query,
                             Required = false,
                             Description = "ID офиса для фильтрации бронирований по офису",
@@ -536,7 +557,7 @@ namespace edemBack
                         },
                         new Microsoft.OpenApi.Models.OpenApiParameter
                         {
-                            Name = "Role",
+                            Name = "Date",
                             In = Microsoft.OpenApi.Models.ParameterLocation.Query,
                             Required = false,
                             Description = "Дата бронирования, при котором оно активно, для фильтрации бронирований по дате",
@@ -703,6 +724,35 @@ namespace edemBack
                 .Produces<List<Models.Office>>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status204NoContent);
 
+            //Get One Offices
+            app.MapGet("/Office/{id:int}", async (int id, IDatabaseFactory factory) =>
+            {
+                if (id < 1)
+                {
+
+                }
+                var office = await IGetFunction.getOneOffice(id, factory);
+                if (office == null)
+                {
+                    return Results.NoContent();
+                }
+                else
+                {
+                    return Results.Ok(office);
+                }
+            })
+                .WithName("GetAllOffices")
+                .WithTags("Office", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить офис";
+                    op.Description = "Получить офис по его идентификатору";
+                    return op;
+                })
+                .Produces<Models.Role>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status204NoContent);
+
             //Get One Status
             app.MapGet("/Status/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
@@ -752,6 +802,60 @@ namespace edemBack
                 {
                     op.Summary = "Получить все статусы";
                     op.Description = "Получить список доступных статусов";
+                    return op;
+                })
+                .Produces<List<Models.Status>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status204NoContent);
+
+            //Get One Status_Request
+            app.MapGet("/Status_Request/{id:int}", async (int id, IDatabaseFactory factory) =>
+            {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natura integers id");
+                }
+                var status = await IGetFunction.getOneStatusRequest(id, factory);
+                if (status == null)
+                {
+                    return Results.NoContent();
+                }
+                else
+                {
+                    return Results.Ok(status);
+                }
+            })
+                .WithName("GetStatusRequestByID")
+                .WithTags("Status", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить статус заявки по id";
+                    op.Description = "Получить статус заявки по его идентификатору";
+                    op.Parameters[0].Description = "Идентификатор статуса (Натуральное число)";
+                    return op;
+                })
+                .Produces<Models.Status>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status204NoContent);
+
+            //Get All Status_Request
+            app.MapGet("/Status_Request", async (IDatabaseFactory factory) =>
+            {
+                var status = await IGetFunction.getAllStatusRequest(factory);
+                if (status.Count == 0)
+                {
+                    return Results.NoContent();
+                }
+                else
+                {
+                    return Results.Ok(status);
+                }
+            })
+                .WithName("getAllStatusRequest")
+                .WithTags("Status", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить все статусы для заявок";
+                    op.Description = "Получить список доступных статусов для заявок";
                     return op;
                 })
                 .Produces<List<Models.Status>>(StatusCodes.Status200OK)

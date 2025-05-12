@@ -123,5 +123,19 @@ namespace edemBack.IFunction
                 await connection.CloseAsync();
             }
         }
+
+        //create Status
+
+
+        //create status_request
+
+
+        //Update Office
+
+
+        //Update Role
+
+
+        //Update Type_work
     }
 }

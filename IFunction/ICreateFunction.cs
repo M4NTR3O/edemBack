@@ -290,7 +290,7 @@ namespace edemBack.IFunction
             using(var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                string query = @"INSERT INTO Type_Work (name) SET (@Name);";
+                string query = @"INSERT INTO Type_Work (name) VALUES (@Name);";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Name", typeWork.Name);
@@ -300,16 +300,16 @@ namespace edemBack.IFunction
                 }
                 await connection.CloseAsync();
             }
-            foreach (Models.Role role in typeWork.Roles)
+            foreach (int role in typeWork.Roles_Id)
             {
                 using (var connection = database.CreateNewConnection())
                 {
                     await connection.OpenAsync();
-                    string query = @"INSERT INTO Work_Role (work_id, role_id) SET (@Work, @Role);";
+                    string query = @"INSERT INTO Work_Role (work_id, role_id) VALUES (@Work, @Role);";
                     using (var command = new MySqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@Work", id);
-                        command.Parameters.AddWithValue("@Role", role.Role_Id);
+                        command.Parameters.AddWithValue("@Role", role);
 
                         await command.ExecuteNonQueryAsync();
                     }
@@ -317,5 +317,10 @@ namespace edemBack.IFunction
                 }
             }
         }
+
+        //create Status
+
+
+        //create status_request
     }
 }

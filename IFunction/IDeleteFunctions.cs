@@ -88,5 +88,53 @@ namespace edemBack.IFunction
                 await connection.CloseAsync();
             }
         }
+        //Delete Status
+        public static async Task DeleteStatus(int id, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"DELETE FROM `Status` WHERE `id_status`=@id;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", id);
+                    await command.ExecuteReaderAsync();
+                }
+                await connection.CloseAsync();
+            }
+        }
+        //Delete Status_Request
+        public static async Task DeleteStatusRequest(int id, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"DELETE FROM `Status_request` WHERE `id`=@id;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", id);
+                    await command.ExecuteReaderAsync();
+                }
+                await connection.CloseAsync();
+            }
+        }
+        //Delete Type_Work
+        public static async Task DeleteTypeWork(int id, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using(var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"DELETE FROM `Type_Work` WHERE `id_work`=@id;";
+                using(var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", id);
+                    await command.ExecuteReaderAsync();
+                }
+                await connection.CloseAsync();
+            }
+        }
     }
 }

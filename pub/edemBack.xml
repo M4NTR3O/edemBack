@@ -1,0 +1,289 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>edemBack</name>
+    </assembly>
+    <members>
+        <member name="T:edemBack.Models.Additionally">
+            <summary>
+            Модель дополнительного параметра для объекта
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Additionally.ID_object">
+            <summary>ID объекта</summary>
+        </member>
+        <member name="P:edemBack.Models.Additionally.Parametr">
+            <summary>Наименование параметра</summary>
+        </member>
+        <member name="P:edemBack.Models.Additionally.Value">
+            <summary>Значение параметра</summary>
+        </member>
+        <member name="T:edemBack.Models.Add_Parametrs_Role">
+            <summary>
+            Модель добавление дополнительных параметров для работников
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Add_Parametrs_Role.Id_Parametr">
+            <summary>ID параметра</summary>
+        </member>
+        <member name="P:edemBack.Models.Add_Parametrs_Role.Role_Id">
+            <summary>ID роли</summary>
+        </member>
+        <member name="P:edemBack.Models.Add_Parametrs_Role.Parametr">
+            <summary>Наименование параметра</summary>
+        </member>
+        <member name="T:edemBack.Models.AuthRequest">
+            <summary>
+            Модель авторизации
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.AuthRequest.Login">
+            <summary>Логин пользователя (номер телефона)</summary>
+        </member>
+        <member name="P:edemBack.Models.AuthRequest.Password">
+            <summary>Пароль</summary>
+        </member>
+        <member name="T:edemBack.Models.Booking">
+            <summary>
+            Модель бронирования
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Booking.Id_Booking">
+            <summary>ID бронирования</summary>
+        </member>
+        <member name="P:edemBack.Models.Booking.Object_id">
+            <summary>ID объекта, на которое применяется бронирование</summary>
+        </member>
+        <member name="P:edemBack.Models.Booking.Date_Start">
+            <summary>Дата начала бронирования</summary>
+        </member>
+        <member name="P:edemBack.Models.Booking.Date_End">
+            <summary>Дата завершения бронирования</summary>
+        </member>
+        <member name="P:edemBack.Models.Booking.Status">
+            <summary>ID статуса бронирования (либо текст, необходимо будет реализовать функцию</summary>
+        </member>
+        <member name="T:edemBack.Models.Object">
+            <summary>
+            Модель объекта
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Id">
+            <summary>ID объекта</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Office_Id">
+            <summary>ID офиса</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Street">
+            <summary>Улица, на которой расположен объект</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.House">
+            <summary>Дом, в котором располагается объект</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Apartment">
+            <summary>Номер квартиры объекта (при необходимости, может быть null)</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Rooms">
+            <summary>Количество комнат у объекта</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Status">
+            <summary>Статус объекта, может быть как числовой, так и текстовый</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Area">
+            <summary>Площадь объекта</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Kitchen">
+            <summary>Наличие кухни</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Balcony">
+            <summary>Наличие балкона</summary>
+        </member>
+        <member name="P:edemBack.Models.Object.Photos">
+            <summary>Список фотографий</summary>
+        </member>
+        <member name="T:edemBack.Models.Office">
+            <summary>
+            Модель офиса
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Office.Office_Id">
+            <summary>ID офиса</summary>
+        </member>
+        <member name="P:edemBack.Models.Office.Street">
+            <summary>Улица, на которой расположен офис</summary>
+        </member>
+        <member name="P:edemBack.Models.Office.House">
+            <summary>Дом, в котором расположен офис</summary>
+        </member>
+        <member name="T:edemBack.Models.Photo">
+            <summary>
+            Модель фотографии
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Photo.Id">
+            <summary>Идентификатор фотографии</summary>
+        </member>
+        <member name="P:edemBack.Models.Photo.Url">
+            <summary>URL расположение фотографии</summary>
+        </member>
+        <member name="T:edemBack.Models.Photo_Object">
+            <summary>
+            Модель связи фото и объекта
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Photo_Object.Photo_id">
+            <summary>Идентификатор фото</summary>
+        </member>
+        <member name="P:edemBack.Models.Photo_Object.Object_id">
+            <summary>Идентификатор объекта</summary>
+        </member>
+        <member name="T:edemBack.Models.Photo_Request">
+            <summary>
+            Модель связи фото и заявки
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Photo_Request.Photo_id">
+            <summary>Идентификатор фото</summary>
+        </member>
+        <member name="P:edemBack.Models.Photo_Request.Request_id">
+            <summary>Идентификатор заявки</summary>
+        </member>
+        <member name="P:edemBack.Models.Photo_Request.Time">
+            <summary>Время фотографии (или загрузки)</summary>
+        </member>
+        <member name="T:edemBack.Models.Request">
+            <summary>
+            Модель заявки на работы (Будет пересмотрена в свзяи с добавлением и изменением параметров)
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Request.Request_Id">
+            <summary>ID заявки</summary>
+        </member>
+        <member name="P:edemBack.Models.Request.Type_Work">
+            <summary>Тип задания</summary>
+        </member>
+        <member name="P:edemBack.Models.Request.Description">
+            <summary>Текстовое описание работ (может быть null)</summary>
+        </member>
+        <member name="P:edemBack.Models.Request.Roles_Id">
+            <summary>Лист ID ролей, которые могут быть назначены на работу</summary>
+        </member>
+        <member name="P:edemBack.Models.Request.Worker_Id">
+            <summary>ID работника (может быть null)</summary>
+        </member>
+        <member name="P:edemBack.Models.Request.Object_Id">
+            <summary>ID объекта</summary>
+        </member>
+        <member name="P:edemBack.Models.Request.Status">
+            <summary>Статус заявки (строковая или числовая переменная)</summary>
+        </member>
+        <member name="P:edemBack.Models.Request.Urgency">
+            <summary>Срочность</summary>
+        </member>
+        <member name="P:edemBack.Models.Request.Photos">
+            <summary>Массив ссылок на фотографии (может быть null)</summary>
+        </member>
+        <member name="T:edemBack.Models.Role">
+            <summary>
+            Модель роли
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Role.Role_Id">
+            <summary>ID роли</summary>
+        </member>
+        <member name="P:edemBack.Models.Role.Name">
+            <summary>Наименование роли</summary>
+        </member>
+        <member name="P:edemBack.Models.Role.Salary">
+            <summary>Зарплата</summary>
+        </member>
+        <member name="P:edemBack.Models.Role.add_Parametrs">
+            <summary>Дополнительные параметры для роли (вопросы для заявок)</summary>
+        </member>
+        <member name="T:edemBack.Models.Status">
+            <summary>
+            Модель статуса
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Status.Id">
+            <summary>ID офиса</summary>
+        </member>
+        <member name="P:edemBack.Models.Status.Name">
+            <summary>ID офиса</summary>
+        </member>
+        <member name="T:edemBack.Models.Status_Request">
+            <summary>
+            Модель статусов для заявок
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Status_Request.Id_Status">
+            <summary>ID статуса</summary>
+        </member>
+        <member name="P:edemBack.Models.Status_Request.Name">
+            <summary>Наименование статуса</summary>
+        </member>
+        <member name="T:edemBack.Models.TypeWork">
+            <summary>
+            Модель типа работ
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.TypeWork.Id_Work">
+            <summary>ID работ</summary>
+        </member>
+        <member name="P:edemBack.Models.TypeWork.Name">
+            <summary>Наименование работы</summary>
+        </member>
+        <member name="P:edemBack.Models.TypeWork.Roles">
+            <summary>Список ролей, которые могут выполнить данный тип задачи</summary>
+        </member>
+        <member name="P:edemBack.Models.TypeWork.Roles_Id">
+            <summary>Список ролей (целочисленно), которые могут выполнить данный тип задачи</summary>
+        </member>
+        <member name="T:edemBack.Models.Worker">
+            <summary>
+            Модель работника
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.Id">
+            <summary>Идентификатор работника</summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.Surname">
+            <summary>Фамилия работника</summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.Name">
+            <summary>Имя работника</summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.Fathername">
+            <summary>Отчество работника (при наличии, может быть null)</summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.PhoneNumber">
+            <summary>Номер телефона работника</summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.Email">
+            <summary>Email работника</summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.Birthday">
+            <summary>Дата рождения работника</summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.Id_Role">
+            <summary>Идентификатор роли</summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.Id_Office">
+            <summary>Иднтификатор офиса</summary>
+        </member>
+        <member name="P:edemBack.Models.Worker.Password">
+            <summary>Пароль пользователя</summary>
+        </member>
+        <member name="T:edemBack.Models.Work_Role">
+            <summary>
+            Модель связи работ с ролями
+            </summary>
+        </member>
+        <member name="P:edemBack.Models.Work_Role.Work">
+            <summary>ID работа</summary>
+        </member>
+        <member name="P:edemBack.Models.Work_Role.Role">
+            <summary>ID Роли</summary>
+        </member>
+    </members>
+</doc>

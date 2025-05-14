@@ -177,17 +177,25 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 string query = @"INSERT INTO Request 
-                            (type_id, worker_id, object_id, status, urgency) 
+                            (type_id, worker_id, object_id, status, urgency, description) 
                             VALUES 
-                            (@Type_Id, @Worker_Id, @Object_Id, @Status, @Urgency);";
+                            (@Type_Id, @Worker_Id, @Object_Id, @Status, @Urgency, @Description);";
 
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Type_Id", request.Type_Work);
                     command.Parameters.AddWithValue("@Worker_Id", (object?)request.Worker_Id ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Object_Id", request.Object_Id);
-                    command.Parameters.AddWithValue("@Status", request.Status);
+                    if (request.Status != "" || request.Status != null)
+                    {
+                        command.Parameters.AddWithValue("@Status", request.Status);
+                    }
+                    else
+                    {
+                        command.Parameters.AddWithValue("@Status", 1);
+                    }
                     command.Parameters.AddWithValue("@Urgency", Convert.ToInt32(request.Urgency));
+                    command.Parameters.AddWithValue("@Description", request.Description);
 
                     await command.ExecuteNonQueryAsync();
                 }
@@ -300,27 +308,61 @@ namespace edemBack.IFunction
                 }
                 await connection.CloseAsync();
             }
-            foreach (int role in typeWork.Roles_Id)
+            if (typeWork.Roles_Id != null)
             {
-                using (var connection = database.CreateNewConnection())
+                foreach (int role in typeWork.Roles_Id)
                 {
-                    await connection.OpenAsync();
-                    string query = @"INSERT INTO Work_Role (work_id, role_id) VALUES (@Work, @Role);";
-                    using (var command = new MySqlCommand(query, connection))
+                    using (var connection = database.CreateNewConnection())
                     {
-                        command.Parameters.AddWithValue("@Work", id);
-                        command.Parameters.AddWithValue("@Role", role);
+                        await connection.OpenAsync();
+                        string query = @"INSERT INTO Work_Role (work_id, role_id) VALUES (@Work, @Role);";
+                        using (var command = new MySqlCommand(query, connection))
+                        {
+                            command.Parameters.AddWithValue("@Work", id);
+                            command.Parameters.AddWithValue("@Role", role);
 
-                        await command.ExecuteNonQueryAsync();
+                            await command.ExecuteNonQueryAsync();
+                        }
+                        await connection.CloseAsync();
                     }
-                    await connection.CloseAsync();
                 }
             }
         }
 
         //create Status
+        public static async Task createStatus(Models.Status status, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using(var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"INSERT INTO Status (name) VALUES (@name);";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@name", status.Name);
 
+                    await command.ExecuteNonQueryAsync();
+                }
+                await connection.CloseAsync();
+            }
+        }
 
         //create status_request
+        public static async Task createStatusRequest(Models.Status_Request status, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"INSERT INTO Status_request (name) VALUES (@name);";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@name", status.Name);
+
+                    await command.ExecuteNonQueryAsync();
+                }
+                await connection.CloseAsync();
+            }
+        }
     }
 }

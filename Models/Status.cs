@@ -8,6 +8,6 @@
         /// <summary>ID офиса</summary>
         public int Id { get; set; }
         /// <summary>ID офиса</summary>
-        public string Name { get; set; }
+        public string? Name { get; set; }
     }
 }

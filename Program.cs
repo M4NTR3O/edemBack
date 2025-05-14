@@ -741,7 +741,7 @@ namespace edemBack
                     return Results.Ok(office);
                 }
             })
-                .WithName("GetAllOffices")
+                .WithName("GetOneOffice")
                 .WithTags("Office", "GET")
                 .WithOpenApi(op =>
                 {
@@ -1189,6 +1189,70 @@ namespace edemBack
                 .Produces(StatusCodes.Status201Created)
                 .Produces(StatusCodes.Status400BadRequest);
 
+            //Create Status
+            app.MapPost("/Status", async (Models.Status status, IDatabaseFactory factory) =>
+            {
+                var validationContext = new ValidationContext(status);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(status, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        await ICreateFunction.createStatus(status, factory);
+                        return Results.Created();
+                    }
+                    catch
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            })
+                .WithName("CreateStatus")
+                .WithTags("POST", "Status")
+                .WithOpenApi(op =>
+                {
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Create Status
+            app.MapPost("/Status_Request", async (Models.Status_Request status, IDatabaseFactory factory) =>
+            {
+                var validationContext = new ValidationContext(status);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(status, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        await ICreateFunction.createStatusRequest(status, factory);
+                        return Results.Created();
+                    }
+                    catch
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            })
+                .WithName("CreateStatusRequest")
+                .WithTags("POST", "Status")
+                .WithOpenApi(op =>
+                {
+                    return op;
+                })
+                .Produces(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status400BadRequest);
+
             //Update Worker
             app.MapPut("/UpdateWorker", async (Models.Worker worker, IDatabaseFactory factory) =>
             {
@@ -1199,7 +1263,7 @@ namespace edemBack
                 {
                     try
                     {
-                        await IUpdateFunction.UpdateWorker(worker, factory);
+                        await IUpdateFunction.updateWorker(worker, factory);
                         return Results.NoContent();
                     }
                     catch (Exception ex)
@@ -1217,7 +1281,7 @@ namespace edemBack
                 .WithOpenApi(op =>
                 {
                     op.Summary = "Обновить работника";
-                    op.Description = "Обновляет запись работника в базе данных";
+                    op.Description = "Обновляет запись работника в базе данных (без пароля)";
                     return op;
                 })
                 .Produces(StatusCodes.Status204NoContent)
@@ -1233,7 +1297,7 @@ namespace edemBack
                 {
                     try
                     {
-                        await IUpdateFunction.UpdateRequest(request, factory);
+                        await IUpdateFunction.updateRequest(request, factory);
                         return Results.NoContent();
                     }
                     catch (Exception ex)
@@ -1251,7 +1315,7 @@ namespace edemBack
                 .WithOpenApi(op =>
                 {
                     op.Summary = "Обновить заявку";
-                    op.Description = "Обновляет запись заявки в базе данных";
+                    op.Description = "Обновляет запись заявки в базе данных (type_id не обновляется)";
                     return op;
                 })
                 .Produces(StatusCodes.Status204NoContent)
@@ -1267,7 +1331,7 @@ namespace edemBack
                 {
                     try
                     {
-                        await IUpdateFunction.UpdateBooking(booking, factory);
+                        await IUpdateFunction.updateBooking(booking, factory);
                         return Results.NoContent();
                     }
                     catch (Exception ex)
@@ -1285,7 +1349,7 @@ namespace edemBack
                 .WithOpenApi(op =>
                 {
                     op.Summary = "Обновить бронирование";
-                    op.Description = "Обновляет запись бронирования в базе данных";
+                    op.Description = "Обновляет запись бронирования в базе данных (без обновления фотографий)";
                     return op;
                 })
                 .Produces(StatusCodes.Status204NoContent)
@@ -1301,7 +1365,7 @@ namespace edemBack
                 {
                     try
                     {
-                        await IUpdateFunction.UpdateObject(_object, factory);
+                        await IUpdateFunction.updateObject(_object, factory);
                         return Results.NoContent();
                     }
                     catch (Exception ex)
@@ -1319,22 +1383,308 @@ namespace edemBack
                 .WithOpenApi(op =>
                 {
                     op.Summary = "Обновить объект";
-                    op.Description = "Обновляет запись объекта в базе данных";
+                    op.Description = "Обновляет запись объекта в базе данных (без обновления дополнительных фотографий, дополнительных параметров)";
                     return op;
                 })
                 .Produces(StatusCodes.Status204NoContent)
                 .Produces(StatusCodes.Status400BadRequest);
 
-            //Update Worker password
-            /*app.MapPatch("/UpdatePassword/{id: int}", (int id, string password) =>
+            //Update Status
+            app.MapPut("/UpdateStatus", async (Models.Status status, IDatabaseFactory factory) =>
             {
-                IUpdateFunction.UpdatePassword(id, password);
+                var validationContext = new ValidationContext(status);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(status, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        await IUpdateFunction.updateStatus(status, factory);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            })
+                .WithName("UpdateStatus")
+                .WithTags("Status", "PUT")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Обновить статус";
+                    op.Description = "Обновляет запись статуса в базе данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Update Status_request
+            app.MapPut("/UpdateStatus_Request", async (Models.Status_Request status, IDatabaseFactory factory) =>
+            {
+                var validationContext = new ValidationContext(status);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(status, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        await IUpdateFunction.updateStatusRequest(status, factory);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            })
+                .WithName("UpdateStatus_Request")
+                .WithTags("Status", "PUT")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Обновить статус заявки";
+                    op.Description = "Обновляет запись статуса заявки в базе данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Update Office
+            app.MapPut("/UpdateOffice", async (Models.Office office, IDatabaseFactory factory) =>
+            {
+                var validationContext = new ValidationContext(office);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(office, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        await IUpdateFunction.updateOffice(office, factory);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            })
+                .WithName("UpdateOffice")
+                .WithTags("Office", "PUT")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Обновить офис";
+                    op.Description = "Обновляет запись офиса в базе данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Update Role
+            app.MapPut("/UpdateRole", async (Models.Role role, IDatabaseFactory factory) =>
+            {
+                var validationContext = new ValidationContext(role);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(role, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        await IUpdateFunction.updateRole(role, factory);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            })
+                .WithName("UpdateRole")
+                .WithTags("Role", "PUT")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Обновить роль";
+                    op.Description = "Обновляет запись роли в базе данных (без дополнительных параметров)";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Update Type_Work
+            app.MapPut("/UpdateTypeWork", async (Models.TypeWork typeWork, IDatabaseFactory factory) =>
+            {
+                var validationContext = new ValidationContext(typeWork);
+                var validationResults = new List<ValidationResult>();
+                var isValid = Validator.TryValidateObject(typeWork, validationContext, validationResults, true);
+                if (isValid)
+                {
+                    try
+                    {
+                        await IUpdateFunction.updateTypeWork(typeWork, factory);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest();
+                }
+            })
+                .WithName("UpdateTypeWork")
+                .WithTags("TypeWork", "PUT")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Обновить тип работ";
+                    op.Description = "Обновляет запись типа работ в базе данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Update Worker password - check on security don't release
+            app.MapPatch("/UpdatePassword/{id:int}", async (int id, string password, IDatabaseFactory factory) =>
+            {
+                await IUpdateFunction.updatePassword(id, password, factory);
                 return Results.NoContent();
-            });*/
+            })
+                .WithName("UpdatePassword")
+                .WithTags("Worker", "PATCH")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Изменение пароля";
+                    op.Description = "Изменяет пароль пользователя по его идентификатору";
+                    return op;
+                });
+
+            //Update Status Request
+            app.MapPatch("/ChangeStatusRequest/{id_request:int}", async (int id_request, int status, IDatabaseFactory factory) =>
+            {
+                {
+                    try
+                    {
+                        await IUpdateFunction.changeStatusRequest(id_request, status, factory);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+            })
+                .WithName("ChangeStatusRequest")
+                .WithTags("PATCH", "Status", "Request")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Изменить статус заявки";
+                    op.Description = "Изменяет целочисленное значение статуса у заявки";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Update Status Boocking
+            app.MapPatch("/ChangeStatusBooking/{id_booking:int}", async (int id_booking, int status, IDatabaseFactory factory) =>
+            {
+                {
+                    try
+                    {
+                        await IUpdateFunction.changeStatusBooking(id_booking, status, factory);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+            })
+                .WithName("ChangeStatusBooking")
+                .WithTags("PATCH", "Status", "Booking")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Изменить статус бронирования";
+                    op.Description = "Изменяет целочисленное значение статуса у бронирования, а также объекта при наступлении бронирования";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Update Status Object
+            app.MapPatch("/ChangeStatusObject/{id_object:int}", async (int id_object, int status, IDatabaseFactory factory) =>
+            {
+                {
+                    try
+                    {
+                        await IUpdateFunction.changeStatusObject(id_object, status, factory);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+            })
+                .WithName("ChangeStatusObject")
+                .WithTags("PATCH", "Status", "Object")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Изменить статус объекта";
+                    op.Description = "Изменяет целочисленное значение статуса у объекта";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Update Worker of Request
+            app.MapPatch("/UpdateWorkerRequest/{id_request:int}", async (int id_request, int id_worker, IDatabaseFactory factory) =>
+            {
+                {
+                    try
+                    {
+                        await IUpdateFunction.updateWorkerRequest(id_request, id_worker, factory);
+                        return Results.NoContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem();
+                    }
+                }
+            })
+                .WithName("UpdateWorkerRequest")
+                .WithTags("PATCH", "Worker", "Request")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Изменить работника на заявку";
+                    op.Description = "Изменяет идентификатор работника, назначенного на заявку";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Worker
             app.MapDelete("/Worker/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
                 await IDeleteFunctions.DeleteWorker(id, factory);
                 return Results.NoContent();
             })
@@ -1346,11 +1696,16 @@ namespace edemBack
                     op.Description = "Удаляет запись работника в базе данных";
                     return op;
                 })
-                .Produces(StatusCodes.Status204NoContent);
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Object
             app.MapDelete("/Object/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
                 await IDeleteFunctions.DeleteObject(id, factory);
                 return Results.NoContent();
             })
@@ -1362,11 +1717,16 @@ namespace edemBack
                     op.Description = "Удаляет запись объекта из базы данных";
                     return op;
                 })
-                .Produces(StatusCodes.Status204NoContent);
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Booking
             app.MapDelete("/Booking/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
                 await IDeleteFunctions.DeleteBooking(id, factory);
                 return Results.NoContent();
             })
@@ -1378,11 +1738,16 @@ namespace edemBack
                     op.Description = "Удаляет запись бронирования из базы данных";
                     return op;
                 })
-                .Produces(StatusCodes.Status204NoContent);
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Office
             app.MapDelete("/Office/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
                 await IDeleteFunctions.DeleteOffice(id, factory);
                 return Results.NoContent();
             })
@@ -1394,11 +1759,16 @@ namespace edemBack
                     op.Description = "Удаляет запись офиса из базы данных";
                     return op;
                 })
-                .Produces(StatusCodes.Status204NoContent);
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Request
             app.MapDelete("/Request/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
                 await IDeleteFunctions.DeleteRequest(id, factory);
                 return Results.NoContent();
             })
@@ -1410,11 +1780,16 @@ namespace edemBack
                     op.Description = "Удаляет запись заявки из базы данных";
                     return op;
                 })
-                .Produces(StatusCodes.Status204NoContent);
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Role
             app.MapDelete("/Role/{id:int}", async (int id, IDatabaseFactory factory) =>
             {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
                 await IDeleteFunctions.DeleteRole(id, factory);
                 return Results.NoContent();
             })
@@ -1426,7 +1801,71 @@ namespace edemBack
                     op.Description = "Удаляет запись роли из базы данных";
                     return op;
                 })
-                .Produces(StatusCodes.Status204NoContent);
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Delete Status
+            app.MapDelete("/Status/{id:int}", async (int id, IDatabaseFactory factory) =>
+            {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
+                await IDeleteFunctions.DeleteStatus(id, factory);
+                return Results.NoContent();
+            })
+                .WithName("DeleteStatus")
+                .WithTags("Status", "DELETE")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Удалить статус";
+                    op.Description = "Удаляет запись статуса из базы данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Delete Status_Request
+            app.MapDelete("/Status_Request/{id:int}", async (int id, IDatabaseFactory factory) =>
+            {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
+                await IDeleteFunctions.DeleteStatusRequest(id, factory);
+                return Results.NoContent();
+            })
+                .WithName("DeleteStatus_Request")
+                .WithTags("Status", "DELETE")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Удалить статус заявки";
+                    op.Description = "Удаляет запись статуса заявки из базы данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
+
+            //Delete Type_Work
+            app.MapDelete("/TypeWork/{id:int}", async (int id, IDatabaseFactory factory) =>
+            {
+                if (id < 1)
+                {
+                    return Results.BadRequest("Not natural integer ID");
+                }
+                await IDeleteFunctions.DeleteTypeWork(id, factory);
+                return Results.NoContent();
+            })
+                .WithName("DeleteTypeWork")
+                .WithTags("TypeWork", "DELETE")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Удалить тип работ";
+                    op.Description = "Удаляет запись типа работ из базы данных";
+                    return op;
+                })
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status400BadRequest);
 
             //Auth Проверил с хэшированием на одном пользователе
             app.MapPost("/Auth", async (AuthRequest request, IDatabaseFactory factory) =>

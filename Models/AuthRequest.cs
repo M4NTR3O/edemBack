@@ -9,5 +9,7 @@
         public string Login { get; set; }
         /// <summary>Пароль</summary>
         public string Password { get; set; }
+        ///<summary>Флаг остаться в системе</summary>
+        public bool RememberMe { get; set; }
     }
 }

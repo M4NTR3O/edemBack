@@ -153,11 +153,12 @@ namespace edemBack.IFunction
         public static async Task<Role?> getRole(int id, IDatabaseFactory factory)
         {
             var database = factory.Create();
+            Models.Role? role = null;
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                Models.Role? role = null;
-                string query = @"SELECT `id_role`, `name`, `salary` FROM `Role` WHERE `id_role`= @id;";
+                
+                string query = @"SELECT `id_role`, `name`, `salary`, `level_important` FROM `Role` WHERE `id_role`= @id;";
                 using(var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@id", id);
@@ -167,12 +168,39 @@ namespace edemBack.IFunction
                     {
                         Role_Id = int.Parse(reader[0].ToString()!),
                         Name = reader[1].ToString()!,
-                        Salary = int.Parse(reader[2].ToString()!)
+                        Salary = int.Parse(reader[2].ToString()!),
+                        LevelImportant = int.Parse(reader[3].ToString()!)
                     };
                 }
                 await connection.CloseAsync();
-                return role;
-            }          
+                
+            }
+            //Вывод дополнительных параметров роли
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Add_Parametrs_Role>? parametrs = new List<Add_Parametrs_Role>();
+                string query = @"SELECT `id_parametr`, `role_id`, `Parametr` FROM `Add_Parametrs_Role` WHERE `role_id`= @id;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", id);
+                    var reader = await command.ExecuteReaderAsync();
+                    while(await reader.ReadAsync())
+                    {
+                        Models.Add_Parametrs_Role parametr = new Models.Add_Parametrs_Role
+                        {
+                            Id_Parametr = int.Parse(reader[0].ToString()!),
+                            Role_Id = int.Parse(reader[0].ToString()!),
+                            Parametr = reader[2].ToString()!
+                        };
+                        parametrs.Add(parametr);
+                    }
+                    
+                }
+                await connection.CloseAsync();
+                role.add_Parametrs = parametrs;
+            }
+            return role;
         }
 
         //Get Role for Id Worker
@@ -183,7 +211,7 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 Models.Role? role = null;
-                string query = @"SELECT `role_id`, `Role`.`name`, `Role`.`salary` FROM `Worker` INNER JOIN `Role` ON `Worker`.`role_id` = `Role`.`id_role` WHERE `id_worker`= @id;";
+                string query = @"SELECT `role_id`, `Role`.`name`, `Role`.`salary`, `Role`.`level_important` `Role` FROM `Worker` INNER JOIN `Role` ON `Worker`.`role_id` = `Role`.`id_role` WHERE `id_worker`= @id;";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@id", id);
@@ -193,7 +221,8 @@ namespace edemBack.IFunction
                     {
                         Role_Id = int.Parse(reader[0].ToString()!),
                         Name = reader[1].ToString()!,
-                        Salary = int.Parse(reader[2].ToString()!)
+                        Salary = int.Parse(reader[2].ToString()!),
+                        LevelImportant = int.Parse(reader[3].ToString()!)
                     };
                 }
                 await connection.CloseAsync();
@@ -236,7 +265,7 @@ namespace edemBack.IFunction
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                string query = "SELECT `id_request`, `type_id`, `worker_id`, `object_id`, `status`, `urgency`, `description` FROM `Request`;";
+                string query = "SELECT `id_request`, `type_id`, `worker`, `object_id`, `status`, `urgency`, `description` FROM `Request`;";
                 List<Models.Request> requests = new List<Models.Request>();
                 using(var command = new MySqlCommand(query, connection))
                 {
@@ -244,9 +273,9 @@ namespace edemBack.IFunction
                     {
                         while (await reader.ReadAsync())
                         {
-                            string query_1 = @"SELECT `role_id` FROM `Work_Role` WHERE `work_id` = @work_id;";
+                            string query_1 = @"SELECT `id_work_role`, `work_id`, `role_id` FROM `Work_Role` WHERE `work_id` = @work_id;";
                             var database_1 = factory.Create();
-                            List<int>? roles = new List<int>();
+                            List<Models.Work_Role>? roles = new List<Models.Work_Role>();
                             using (var new_connection = database_1.CreateNewConnection())
                             {
                                 await new_connection.OpenAsync();
@@ -257,7 +286,37 @@ namespace edemBack.IFunction
                                     {
                                         while (await reader_1.ReadAsync())
                                         {
-                                            roles.Add(int.Parse(reader_1[0].ToString()!));
+                                            Models.Work_Role work_Role = new Work_Role
+                                            {
+                                                ID = int.Parse(reader_1[0].ToString()!),
+                                                Work = reader_1[1].ToString()!,
+                                                Role = reader_1[2].ToString()!
+                                            };
+                                            roles.Add(work_Role);
+                                        }
+                                    }
+                                }
+                            }
+                            List<Models.RequestWorker> workers = new List<Models.RequestWorker>();
+                            query_1 = @"SELECT `id_request_worker`, `request_id`, `worker_id` FROM `Request_Worker` WHERE `request_id` = @request_id;";
+                            database_1 = factory.Create();
+                            using (var new_connection = database_1.CreateNewConnection())
+                            {
+                                await new_connection.OpenAsync();
+                                using (var new_command = new MySqlCommand(query_1, new_connection))
+                                {
+                                    new_command.Parameters.AddWithValue("@request_id", int.Parse(reader[1].ToString()!).ToString());
+                                    using (var reader_1 = await new_command.ExecuteReaderAsync())
+                                    {
+                                        while (await reader_1.ReadAsync())
+                                        {
+                                            Models.RequestWorker requestWorker = new RequestWorker
+                                            {
+                                                Id = int.Parse(reader_1[0].ToString()!),
+                                                Request = int.Parse(reader_1[1].ToString()!),
+                                                Worker = int.Parse(reader_1[2].ToString()!)
+                                            };
+                                            workers.Add(requestWorker);
                                         }
                                     }
                                 }
@@ -266,13 +325,14 @@ namespace edemBack.IFunction
                             {
                                 Request_Id = int.Parse(reader[0].ToString()!),
                                 Type_Work = int.Parse(reader[1].ToString()!).ToString(),
-                                Worker_Id = (reader[2] != DBNull.Value ? int.Parse(reader[2].ToString()!) : null),
+                                Worker =  bool.Parse(reader[2].ToString()!),
                                 Object_Id = int.Parse(reader[3].ToString()!),
                                 Status = int.Parse(reader[4].ToString()!).ToString(),
                                 Urgency = bool.Parse(reader[5].ToString()!),
                                 Description = reader[6].ToString()!,
                                 Photos = null,
-                                Roles_Id = roles
+                                Roles_Id = roles,
+                                Workers_Request = workers
                             };
                             requests.Add(oneRequest);
                         }
@@ -291,16 +351,16 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 Models.Request? request = null;
-                string query = @"SELECT `id_request`, `type_id`, `worker_id`, `object_id`, `status`, `urgency`, `description` FROM `Request` WHERE `id_request` = @id;";
+                string query = @"SELECT `id_request`, `type_id`, `worker`, `object_id`, `status`, `urgency`, `description` FROM `Request` WHERE `id_request` = @id;";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@id", id);
                     var reader = await command.ExecuteReaderAsync();
                     await reader.ReadAsync();
 
-                    string query_1 = @"SELECT `role_id` FROM `Work_Role` WHERE `work_id` = @work_id;";
+                    string query_1 = @"SELECT `id_work_role`, `work_id`, `role_id` FROM `Work_Role` WHERE `work_id` = @work_id;";
                     var database_1 = factory.Create();
-                    List<int>? roles = new List<int>();
+                    List<Models.Work_Role>? roles = new List<Models.Work_Role>();
                     using (var new_connection = database_1.CreateNewConnection())
                     {
                         await new_connection.OpenAsync();
@@ -311,23 +371,54 @@ namespace edemBack.IFunction
                             {
                                 while (await reader_1.ReadAsync())
                                 {
-                                    roles.Add(int.Parse(reader_1[0].ToString()!));
+                                    Models.Work_Role work_Role = new Work_Role
+                                    {
+                                        ID = int.Parse(reader_1[0].ToString()!),
+                                        Work = reader_1[1].ToString()!,
+                                        Role = reader_1[2].ToString()!
+                                    };
+                                    roles.Add(work_Role);
                                 }
                             }
                         }
                     }
-
+                    List<Models.RequestWorker> workers = new List<Models.RequestWorker>();
+                    query_1 = @"SELECT `id_request_worker`, `request_id`, `worker_id` FROM `Request_Worker` WHERE `request_id` = @request_id;";
+                    database_1 = factory.Create();
+                    using (var new_connection = database_1.CreateNewConnection())
+                    {
+                        await new_connection.OpenAsync();
+                        using (var new_command = new MySqlCommand(query_1, new_connection))
+                        {
+                            new_command.Parameters.AddWithValue("@request_id", int.Parse(reader[0].ToString()!).ToString());
+                            using (var reader_1 = await new_command.ExecuteReaderAsync())
+                            {
+                                while (await reader_1.ReadAsync())
+                                {
+                                    Models.RequestWorker requestWorker = new RequestWorker
+                                    {
+                                        Id = int.Parse(reader_1[0].ToString()!),
+                                        Request = int.Parse(reader_1[1].ToString()!),
+                                        Worker = int.Parse(reader_1[2].ToString()!)
+                                    };
+                                    workers.Add(requestWorker);
+                                }
+                            }
+                        }
+                        await new_connection.CloseAsync();
+                    }
                     request = new Models.Request
                     {
                         Request_Id = int.Parse(reader[0].ToString()!),
                         Type_Work = int.Parse(reader[1].ToString()!).ToString(),
-                        Worker_Id = (reader[2] != DBNull.Value ? int.Parse(reader[2].ToString()!) : null),
+                        Worker = bool.Parse(reader[2].ToString()!),
                         Object_Id = int.Parse(reader[3].ToString()!),
                         Status = int.Parse(reader[4].ToString()!).ToString(),
                         Urgency = bool.Parse(reader[5].ToString()!),
                         Description = reader[6].ToString()!,
                         Photos = null,
-                        Roles_Id = roles
+                        Roles_Id = roles,
+                        Workers_Request = workers
                     };
                 }
                 await connection.CloseAsync();
@@ -342,12 +433,12 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 List<Models.Booking> booking = new List<Models.Booking>();
-                string query = "SELECT `id_booking`, `object_id`, `date_start`, `date_end`, `Status`.`name` FROM `Object_Booking` INNER JOIN `Status` ON `Object_Booking`.`status` = `Status`.`id_status`;";
+                string query = @"SELECT `id_booking`, `object_id`, `date_start`, `date_end`, `Status`.`name` as `status` FROM `Object_Booking` INNER JOIN `Status` ON `Object_Booking`.`status` = `Status`.`id_status`;";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     var reader = await command.ExecuteReaderAsync();
 
-                    while (reader.Read())
+                    while (await reader.ReadAsync())
                     {
                         Models.Booking oneBooking = new Models.Booking
                         {
@@ -363,6 +454,30 @@ namespace edemBack.IFunction
                 await connection.CloseAsync();
                 return booking;
             }            
+        }
+
+        public static async Task<List<int>>? getAllRequestWorker(int worker, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<int> requests = new List<int>();
+                string query = @"SELECT `request_id` FROM `Request_Worker` WHERE `worker_id`=@Id;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue(@"Id", worker);
+                    var reader = await command.ExecuteReaderAsync();
+
+                    while (await reader.ReadAsync())
+                    {
+
+                        requests.Add(int.Parse(reader[0].ToString()!));
+                    }
+                }
+                await connection.CloseAsync();
+                return requests;
+            }
         }
 
         //Get One Booking
@@ -602,7 +717,7 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 List<Models.Role> roles = new List<Role>();
-                string query = "SELECT `id_role`, `name` FROM `Role` WHERE NOT `id_role` BETWEEN 1 AND 2 AND NOT `id_role` BETWEEN 4 AND 5;";
+                string query = "SELECT `id_role`, `name` FROM `Role` WHERE `level_important` = 4;";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     var reader = await command.ExecuteReaderAsync();
@@ -707,7 +822,7 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 List<Models.Work_Role> works_roles = new List<Work_Role>();
-                string query = "SELECT `work_id`, `role_id` FROM `Work_Role`;";
+                string query = "SELECT `id_work_role`, `work_id`, `role_id` FROM `Work_Role`;";
                 using(var command = new MySqlCommand(query, connection))
                 {
                     var reader = await command.ExecuteReaderAsync();
@@ -715,8 +830,9 @@ namespace edemBack.IFunction
                     {
                         Models.Work_Role work_Role = new Work_Role
                         {
-                            Work = reader[0].ToString()!,
-                            Role = reader[1].ToString()!
+                            ID = int.Parse(reader[0].ToString()!),
+                            Work = reader[1].ToString()!,
+                            Role = reader[2].ToString()!
                         };
                         works_roles.Add(work_Role);
                     }
@@ -733,7 +849,7 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 List<Models.Work_Role> works_roles = new List<Work_Role>();
-                string query = "SELECT (`Type_Work`.`name`) AS `work`, `Role`.`name` AS `role` FROM `Work_Role` INNER JOIN `Type_Work` ON `Type_Work`.`id_work` = `Work_Role`.`work_id` INNER JOIN `Role` ON `Role`.`id_role` = `Work_Role`.`role_id`;";
+                string query = "SELECT `id_work_role`, (`Type_Work`.`name`) AS `work`, `Role`.`name` AS `role` FROM `Work_Role` INNER JOIN `Type_Work` ON `Type_Work`.`id_work` = `Work_Role`.`work_id` INNER JOIN `Role` ON `Role`.`id_role` = `Work_Role`.`role_id`;";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     var reader = await command.ExecuteReaderAsync();
@@ -741,8 +857,9 @@ namespace edemBack.IFunction
                     {
                         Models.Work_Role work_Role = new Work_Role
                         {
-                            Work = reader[0].ToString()!,
-                            Role = reader[1].ToString()!
+                            ID = int.Parse(reader[0].ToString()!),
+                            Work = reader[1].ToString()!,
+                            Role = reader[2].ToString()!
                         };
                         works_roles.Add(work_Role);
                     }

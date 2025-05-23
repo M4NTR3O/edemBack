@@ -15,11 +15,10 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 using (var command = new MySqlCommand(@"UPDATE `Request` SET object_id = @Object_Id,
-                                                                worker_id = @WorkerId, status = @Status,
-                                                                urgency = @Urgency, description = @Description,  WHERE id_request = @RequestId;", connection))
+                                                                status = @Status,
+                                                                urgency = @Urgency, description = @Description WHERE id_request = @RequestId;", connection))
                 {
                     command.Parameters.AddWithValue("@Object_Id", request.Object_Id);
-                    command.Parameters.AddWithValue("@WorkerId", request.Worker_Id);
                     command.Parameters.AddWithValue("@Status", request.Status);
                     command.Parameters.AddWithValue("@Urgency", request.Urgency);
                     command.Parameters.AddWithValue("@Description", request.Description);
@@ -37,7 +36,10 @@ namespace edemBack.IFunction
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                using (var command = new MySqlCommand(@"UPDATE `Worker` SET surname = @Surname, name = @Name, fatherName = @Fathername, phoneNumber = @PhoneNumber, email = @Email, birthday = @Birthday, role_id = @Role_Id, office_id = @Office_Id, password = @Password WHERE id_worker = @Id;", connection))
+                using (var command = new MySqlCommand(@"UPDATE `Worker` SET surname = @Surname, name = @Name,
+                                                          fatherName = @Fathername, phoneNumber = @PhoneNumber,
+                                                          email = @Email, birthday = @Birthday, role_id = @Role_Id,
+                                                          office_id = @Office_Id WHERE id_worker = @Id;", connection))
                 {
                     command.Parameters.AddWithValue("@Surname", worker.Surname);
                     command.Parameters.AddWithValue("@Name", worker.Name);
@@ -79,15 +81,31 @@ namespace edemBack.IFunction
         public static async Task updateBooking(Models.Booking booking, IDatabaseFactory factory)
         {
             var database = factory.Create();
-            
+            //Search Status_id for text 
+            int id_status = 0;
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                using (var command = new MySqlCommand(@"UPDATE Object_Booking SET date_start = @Date_start, date_end = @Date_end, status = @Status WHERE id_booking = @Id_Booking", connection))
+                using (var command1 = new MySqlCommand(@"SELECT `id_status` FROM `Status` WHERE `name` = @Status", connection))
                 {
-                    command.Parameters.AddWithValue("@Date_start", booking.Date_Start.Date);
-                    command.Parameters.AddWithValue("@Date_end", booking.Date_End.Date);
-                    command.Parameters.AddWithValue("@Status", booking.Status);
+                    command1.Parameters.AddWithValue("@Status", booking.Status);
+                    var reader = await command1.ExecuteReaderAsync();
+                    await reader.ReadAsync();
+                    id_status = int.Parse(reader[0].ToString()!);
+                }
+                await connection.CloseAsync();
+            }
+
+            //Update
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                using (var command = new MySqlCommand(@"UPDATE Object_Booking SET object_id = @Object, date_start = @Date_start, date_end = @Date_end, status = @Status WHERE id_booking = @Id_Booking", connection))
+                {
+                    command.Parameters.AddWithValue("@Object", booking.Object_id);
+                    command.Parameters.Add("@Date_Start", MySqlDbType.Date).Value = booking.Date_Start;
+                    command.Parameters.Add("@Date_End", MySqlDbType.Date).Value = booking.Date_End;
+                    command.Parameters.AddWithValue("@Status", id_status);
                     command.Parameters.AddWithValue("@Id_Booking", booking.Id_Booking);
 
                     await command.ExecuteNonQueryAsync();
@@ -102,8 +120,14 @@ namespace edemBack.IFunction
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                using(var command = new MySqlCommand(@"UPDATE `Object` SET balcony = @Balcony, status = @Status, kitchen = @Kitchen WHERE id_object = @Id_object;", connection))
+                using(var command = new MySqlCommand(@"UPDATE `Object` SET office_id = @Office, street = @Street, house = @House, apartment = @Apartment, area = @Area,
+                                                         balcony = @Balcony, status = @Status, kitchen = @Kitchen WHERE id_object = @Id_object;", connection))
                 {
+                    command.Parameters.AddWithValue("@Office", _object.Office_Id);
+                    command.Parameters.AddWithValue("@Street", _object.Street);
+                    command.Parameters.AddWithValue("@House", _object.House);
+                    command.Parameters.AddWithValue("@Apartment", _object.Apartment);
+                    command.Parameters.AddWithValue("@Area", _object.Area);
                     command.Parameters.AddWithValue("@Balcony", _object.Balcony);
                     command.Parameters.AddWithValue("@Status", _object.Status);
                     command.Parameters.AddWithValue("@Kitchen", _object.Kitchen);
@@ -179,13 +203,14 @@ namespace edemBack.IFunction
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                string query = @"UPDATE Role SET name = @Name, salary = @Salary WHERE id_role = @id;";
+                string query = @"UPDATE Role SET name = @Name, salary = @Salary, level_important = @Level WHERE id_role = @id;";
 
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Name", role.Name);
                     command.Parameters.AddWithValue("@Salary", role.Salary);
                     command.Parameters.AddWithValue("@id", role.Role_Id);
+                    command.Parameters.AddWithValue("@Level", role.LevelImportant);
 
                     await command.ExecuteNonQueryAsync();
                 }
@@ -214,22 +239,37 @@ namespace edemBack.IFunction
         }
 
         //Change Status Booking
-        public static async Task changeStatusBooking(int id_booking, int status, IDatabaseFactory factory)
+        public static async Task changeStatusBooking(int id_booking, string status, IDatabaseFactory factory)
         {
             var database = factory.Create();
+            //Change Status
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
                 string query = @"UPDATE Object_Booking SET status = @Status WHERE id_booking = @id;";
+                int id_status = 0;
+                using (var newconnection = database.CreateNewConnection())
+                {
+                    await newconnection.OpenAsync();
+                    using (var command1 = new MySqlCommand(@"SELECT `id_status` FROM `Status` WHERE `name` = @Status", connection))
+                    {
+                        command1.Parameters.AddWithValue("@Status", status);
+                        var reader = await command1.ExecuteReaderAsync();
+                        await reader.ReadAsync();
+                        id_status = int.Parse(reader[0].ToString()!);
+                    }
+                    await newconnection.CloseAsync();
+                }
                 using (var command = new MySqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@Status", status);
+                    command.Parameters.AddWithValue("@Status", id_status);
                     command.Parameters.AddWithValue("@id", id_booking);
                     await command.ExecuteNonQueryAsync();
                 }
 
                 await connection.CloseAsync();
             }
+            //Check date
             DateTime start; DateTime finish; int _object;
             using (var connection = database.CreateNewConnection())
             {
@@ -247,15 +287,29 @@ namespace edemBack.IFunction
 
                 await connection.CloseAsync();
             }
+            //Change Status for date
             if ((DateTime.Now > start) && (DateTime.Now < finish))
             {
+                int id_status = 0;
+                using (var connection = database.CreateNewConnection())
+                {
+                    await connection.OpenAsync();
+                    using (var command1 = new MySqlCommand(@"SELECT `id_status` FROM `Status` WHERE `name` = @Status", connection))
+                    {
+                        command1.Parameters.AddWithValue("@Status", status);
+                        var reader = await command1.ExecuteReaderAsync();
+                        await reader.ReadAsync();
+                        id_status = int.Parse(reader[0].ToString()!);
+                    }
+                    await connection.CloseAsync();
+                }
                 using (var connection = database.CreateNewConnection())
                 {
                     await connection.OpenAsync();
                     string query = @"UPDATE Object SET status = @Status WHERE id_object = @id;";
                     using (var command = new MySqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@Status", status);
+                        command.Parameters.AddWithValue("@Status", id_status);
                         command.Parameters.AddWithValue("@id", _object);
                         await command.ExecuteNonQueryAsync();
                     }
@@ -266,16 +320,29 @@ namespace edemBack.IFunction
         }
 
         //Change status for object
-        public static async Task changeStatusObject(int id_object, int status, IDatabaseFactory factory)
+        public static async Task changeStatusObject(int id_object, string status, IDatabaseFactory factory)
         {
             var database = factory.Create();
+            int id_status = 0;
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                using (var command1 = new MySqlCommand(@"SELECT `id_status` FROM `Status` WHERE `name` = @Status", connection))
+                {
+                    command1.Parameters.AddWithValue("@Status", status);
+                    var reader = await command1.ExecuteReaderAsync();
+                    await reader.ReadAsync();
+                    id_status = int.Parse(reader[0].ToString()!);
+                }
+                await connection.CloseAsync();
+            }
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
                 string query = @"UPDATE Object SET status = @Status WHERE id_object = @id;";
                 using (var command = new MySqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@Status", status);
+                    command.Parameters.AddWithValue("@Status", id_status);
                     command.Parameters.AddWithValue("@id", id_object);
                     await command.ExecuteNonQueryAsync();
                 }
@@ -285,16 +352,29 @@ namespace edemBack.IFunction
         }
 
         //Change Status Request
-        public static async Task changeStatusRequest(int id_request, int status, IDatabaseFactory factory)
+        public static async Task changeStatusRequest(int id_request, string status, IDatabaseFactory factory)
         {
             var database = factory.Create();
+            int id_status = 0;
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                using (var command1 = new MySqlCommand(@"SELECT `id_status` FROM `Status` WHERE `name` = @Status", connection))
+                {
+                    command1.Parameters.AddWithValue("@Status", status);
+                    var reader = await command1.ExecuteReaderAsync();
+                    await reader.ReadAsync();
+                    id_status = int.Parse(reader[0].ToString()!);
+                }
+                await connection.CloseAsync();
+            }
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
                 string query = @"UPDATE Request SET status = @Status WHERE id_request = @id;";
                 using (var command = new MySqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@Status", status);
+                    command.Parameters.AddWithValue("@Status", id_status);
                     command.Parameters.AddWithValue("@id", id_request);
                     await command.ExecuteNonQueryAsync();
                 }
@@ -315,6 +395,43 @@ namespace edemBack.IFunction
                 {
                     command.Parameters.AddWithValue("@Worker", id_worker);
                     command.Parameters.AddWithValue("@id", id_request);
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                await connection.CloseAsync();
+            }
+        }
+        //Update Parametrs Role
+        public static async Task updateParametrRole(Models.Add_Parametrs_Role parametr, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"UPDATE Add_Parametrs_Role SET parametr = @Parametr WHERE id_parametr = @id;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Parametr", parametr.Parametr);
+                    command.Parameters.AddWithValue("@id", parametr.Id_Parametr);
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                await connection.CloseAsync();
+            }
+        }
+
+        //Update Work_Role
+        public static async Task updateWorkRole(Models.Work_Role work_role, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"UPDATE Work_Role SET role_id = @Role WHERE id_work_role = @id;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Parametr", work_role.ID);
+                    command.Parameters.AddWithValue("@id", work_role.Role);
                     await command.ExecuteNonQueryAsync();
                 }
 

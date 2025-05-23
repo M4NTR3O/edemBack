@@ -13,5 +13,7 @@
         public int? Salary { get; set; }
         ///<summary>Дополнительные параметры для роли (вопросы для заявок)</summary>
         public List<Models.Add_Parametrs_Role>? add_Parametrs { get; set; }
+        ///<summary>Уровень приоритета</summary>
+        public int? LevelImportant { get; set; }
     }
 }

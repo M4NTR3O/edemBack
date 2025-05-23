@@ -1,5 +1,8 @@
 ﻿using edemBack.Models;
 using MySql.Data.MySqlClient;
+using Mysqlx.Crud;
+using System.Data;
+using System.Net.Http.Headers;
 
 namespace edemBack.IFunction
 {
@@ -132,14 +135,15 @@ namespace edemBack.IFunction
             {
                 await connection.OpenAsync();
                 string query = @"INSERT INTO Role 
-                            (name, salary) 
+                            (name, salary, level_important) 
                             VALUES 
-                            (@Name, @Salary);";
+                            (@Name, @Salary, @Level);";
 
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Name", role.Name);
                     command.Parameters.AddWithValue("@Salary", role.Salary);
+                    command.Parameters.AddWithValue("@Level", role.LevelImportant);
 
                     await command.ExecuteNonQueryAsync();
                     id = command.LastInsertedId;
@@ -173,18 +177,20 @@ namespace edemBack.IFunction
         public static async Task createRequest(Models.Request request, IDatabaseFactory factory)
         {
             var database = factory.Create();
+            long request_id = -1;
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
+                
                 string query = @"INSERT INTO Request 
-                            (type_id, worker_id, object_id, status, urgency, description) 
+                            (type_id, worker, object_id, status, urgency, description) 
                             VALUES 
-                            (@Type_Id, @Worker_Id, @Object_Id, @Status, @Urgency, @Description);";
+                            (@Type_Id, @Worker, @Object_Id, @Status, @Urgency, @Description);";
 
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Type_Id", request.Type_Work);
-                    command.Parameters.AddWithValue("@Worker_Id", (object?)request.Worker_Id ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@Worker", (object?)request.Worker ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Object_Id", request.Object_Id);
                     if (request.Status != "" || request.Status != null)
                     {
@@ -198,8 +204,45 @@ namespace edemBack.IFunction
                     command.Parameters.AddWithValue("@Description", request.Description);
 
                     await command.ExecuteNonQueryAsync();
+                    request_id = command.LastInsertedId;
                 }
                 await connection.CloseAsync();
+            }
+            if (request.Workers_id != null || request.Workers_id.Count != 0)
+            {
+                foreach(var worker in request.Workers_id)
+                {
+                    using (var connection = database.CreateNewConnection())
+                    {
+                        await connection.OpenAsync();
+                        string query = @"INSERT INTO Request_Worker
+                                (request_id, worker_id)
+                                VALUES
+                                (@Request, @Worker);";
+                        using (var command = new MySqlCommand(query, connection))
+                        {
+                            command.Parameters.AddWithValue("@Request", request_id);
+                            command.Parameters.AddWithValue(@"Worker", worker);
+
+                            await command.ExecuteNonQueryAsync();
+                        }
+                        await connection.CloseAsync();
+                    }
+                }
+                using (var connection = database.CreateNewConnection())
+                {
+                    await connection.OpenAsync();
+                    string query = @"UPDATE Request
+                                SET worker = true, status = '2' WHERE id_request = @Request;";
+                    using (var command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Request", request_id);
+
+                        await command.ExecuteNonQueryAsync();
+                    }
+                    await connection.CloseAsync();
+                }
+
             }
         }
 
@@ -362,6 +405,96 @@ namespace edemBack.IFunction
                     await command.ExecuteNonQueryAsync();
                 }
                 await connection.CloseAsync();
+            }
+        }
+
+        //Create Parametr Role
+        public static async Task createParametrRole(Models.Add_Parametrs_Role parametr, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"INSERT INTO Add_Parametrs_Role (parametr, role_id) VALUES (@Parametr, @Role);";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Parametr", parametr.Parametr);
+                    command.Parameters.AddWithValue("@Role", parametr.Role_Id);
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                await connection.CloseAsync();
+            }
+        }
+
+        //create work_role
+        public static async Task createWorkRole(Models.Work_Role work_Role, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"INSERT INTO Work_Role (work_id, role_id) VALUES (@Work, @Role);";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Work", work_Role.Work);
+                    command.Parameters.AddWithValue("@Role", work_Role.Role);
+
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                await connection.CloseAsync();
+            }
+        }
+
+        //create worker fo request
+        public static async Task createWorkerRequest(int id_worker, int id_request, IDatabaseFactory factory)
+        {
+            //500 ошибка проверить
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"INSERT INTO Request_Worker (request_id, worker_id) VALUES (@Request, @Worker);";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Request", id_request);
+                    command.Parameters.AddWithValue("@Worker", id_worker);
+
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                await connection.CloseAsync();
+            }
+            bool worker = false;
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = @"SELECT COUNT(worker_id) FROM Request_Worker WHERE request_id = @Request;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Request", id_request);
+                    var reader = await command.ExecuteReaderAsync();
+                    await reader.ReadAsync();
+                    worker = int.Parse(reader[0].ToString()!) > 0;
+                }
+                await connection.CloseAsync();
+            }
+            if (worker)
+            {
+                using (var connection = database.CreateNewConnection())
+                {
+                    await connection.OpenAsync();
+                    string query = @"UPDATE Request SET worker = true WHERE id_request = @Request;";
+                    using (var command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Request", id_request);
+
+                        await command.ExecuteNonQueryAsync();
+                    }
+
+                    await connection.CloseAsync();
+                }
             }
         }
     }

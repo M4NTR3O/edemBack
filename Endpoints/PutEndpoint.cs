@@ -6,10 +6,10 @@ namespace edemBack.Endpoints
 {
     public class PutEndpoint: IFunction.IEndpoint, IUpdateFunction
     {
-        public void MapEndpoints(WebApplication app)
+        public void MapEndpoints(IEndpointRouteBuilder app)
         {
             //Update Worker
-            app.MapPut("/UpdateWorker", async (Models.Worker worker, IDatabaseFactory factory) =>
+            app.MapPut("/UpdateWorker", [Authorize(Policy = "level2")]  async (Models.Worker worker, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(worker);
                 var validationResults = new List<ValidationResult>();
@@ -43,7 +43,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Request
-            app.MapPut("/UpdateRequest", async (Models.Request request, IDatabaseFactory factory) =>
+            app.MapPut("/UpdateRequest", [Authorize(Policy = "level3")] async (Models.Request request, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(request);
                 var validationResults = new List<ValidationResult>();
@@ -77,7 +77,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Booking
-            app.MapPut("/UpdateBooking", async (Models.Booking booking, IDatabaseFactory factory) =>
+            app.MapPut("/UpdateBooking", [Authorize(Policy = "Operator")] async (Models.Booking booking, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(booking);
                 var validationResults = new List<ValidationResult>();
@@ -111,7 +111,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Object
-            app.MapPut("/UpdateObject", async (Models.Object _object, IDatabaseFactory factory) =>
+            app.MapPut("/UpdateObject", [Authorize(Policy = "level1to2")] async (Models.Object _object, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(_object);
                 var validationResults = new List<ValidationResult>();
@@ -145,7 +145,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Status
-            app.MapPut("/UpdateStatus", async (Models.Status status, IDatabaseFactory factory) =>
+            app.MapPut("/UpdateStatus", [Authorize(Policy = "level1to2")] async (Models.Status status, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(status);
                 var validationResults = new List<ValidationResult>();
@@ -179,7 +179,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Status_request
-            app.MapPut("/UpdateStatus_Request", async (Models.Status_Request status, IDatabaseFactory factory) =>
+            app.MapPut("/UpdateStatus_Request", [Authorize(Policy = "level1to2")] async (Models.Status_Request status, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(status);
                 var validationResults = new List<ValidationResult>();
@@ -213,7 +213,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Office
-            app.MapPut("/UpdateOffice", async (Models.Office office, IDatabaseFactory factory) =>
+            app.MapPut("/UpdateOffice", [Authorize(Policy = "level1")] async (Models.Office office, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(office);
                 var validationResults = new List<ValidationResult>();
@@ -281,7 +281,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Type_Work
-            app.MapPut("/UpdateTypeWork", async (Models.TypeWork typeWork, IDatabaseFactory factory) =>
+            app.MapPut("/UpdateTypeWork", [Authorize(Policy = "level1to2")] async (Models.TypeWork typeWork, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(typeWork);
                 var validationResults = new List<ValidationResult>();
@@ -315,7 +315,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Work_role
-            app.MapPut("UpdateWork_Role", async (Models.Work_Role work_role, IDatabaseFactory factory) =>
+            app.MapPut("UpdateWork_Role", [Authorize(Policy = "level1to2")] async (Models.Work_Role work_role, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(work_role);
                 var validationResults = new List<ValidationResult>();
@@ -349,7 +349,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Parametrs Role
-            app.MapPut("UpdateParametrRole", async (Models.Add_Parametrs_Role parametr, IDatabaseFactory factory) =>
+            app.MapPut("UpdateParametrRole", [Authorize(Policy = "level1to2")] async (Models.Add_Parametrs_Role parametr, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(parametr);
                 var validationResults = new List<ValidationResult>();

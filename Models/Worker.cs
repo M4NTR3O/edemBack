@@ -25,6 +25,6 @@
         /// <summary>Иднтификатор офиса</summary>
         public int Id_Office { get; set; }
         /// <summary>Пароль пользователя</summary>
-        public string Password { get; set; }
+        public string? Password { get; set; }
     }
 }

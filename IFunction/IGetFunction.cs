@@ -41,6 +41,43 @@ namespace edemBack.IFunction
             
         }
 
+        //Get all object for worker
+        public static async Task<List<Models.Object>> getObjectsWorker(int office, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Object> objects = new List<Models.Object>();
+                using (var command = new MySqlCommand(@"SELECT `id_object`, `office_id`, `street`, `house`, `apartment`, `rooms`, `status`, `area`, `kitchen`, `balcony` FROM `Object` WHERE `office_id` = @Office;", connection))
+                {
+                    command.Parameters.AddWithValue("Office", office);
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Object oneObject = new Models.Object
+                        {
+                            Id = int.Parse(reader[0].ToString()!),
+                            Office_Id = int.Parse(reader[1].ToString()!),
+                            Street = reader[2].ToString()!,
+                            House = reader[3].ToString()!,
+                            Apartment = reader[4].ToString()!,
+                            Rooms = int.Parse(reader[5].ToString()!),
+                            Status = reader[6].ToString()!,
+                            Area = decimal.Parse(reader[7].ToString()!),
+                            Kitchen = bool.Parse(reader[8].ToString()!),
+                            Balcony = bool.Parse(reader[9].ToString()!),
+                            Photos = await getPhotoOneObject(int.Parse(reader[0].ToString()!), factory)
+                        };
+                        objects.Add(oneObject);
+                    }
+                }
+                await connection.CloseAsync();
+                return objects;
+            }
+
+        }
+
         //Get one object
         public static async Task<Models.Object?> getObject(int id, IDatabaseFactory factory)
         {
@@ -115,6 +152,45 @@ namespace edemBack.IFunction
             }
             
         }
+
+        //Get Workers for Worker
+        public static async Task<List<Worker>> getWorkersWorker(int office, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Worker> workers = new List<Worker>();
+                string query = @"SELECT `id_worker`, `surname`, `name`, `fatherName`, `phoneNumber`, `email`, `birthday`, `role_id`, `office_id`, `password` FROM `Worker` WHERE `office_id` = @Office;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Office", office);
+                    var reader = await command.ExecuteReaderAsync();
+
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Worker worker = new Models.Worker
+                        {
+                            Id = int.Parse(reader[0].ToString()!),
+                            Surname = reader[1].ToString()!,
+                            Name = reader[2].ToString()!,
+                            Fathername = reader[3].ToString()! != null ? reader[3].ToString() : null,
+                            PhoneNumber = reader[4].ToString()!,
+                            Email = reader[5].ToString()!,
+                            Birthday = DateTime.Parse(reader[6].ToString()!),
+                            Id_Role = int.Parse(reader[7].ToString()!),
+                            Id_Office = int.Parse(reader[8].ToString()!),
+                            Password = reader[9].ToString()!
+                        };
+                        workers.Add(worker);
+                    }
+                }
+                await connection.CloseAsync();
+                return workers;
+            }
+
+        }
+
         //Get 1 worker
         public static async Task<Worker?> getWorker(int id, IDatabaseFactory factory)
         {
@@ -259,16 +335,17 @@ namespace edemBack.IFunction
         }
 
         //Get Request with filter
-        public static async Task<List<Models.Request>> getAllRequest(IDatabaseFactory factory)
+        public static async Task<List<Models.Request>> getAllRequest(int office_id, IDatabaseFactory factory)
         {
             var database = factory.Create();
             using (var connection = database.CreateNewConnection())
             {
                 await connection.OpenAsync();
-                string query = "SELECT `id_request`, `type_id`, `worker`, `object_id`, `status`, `urgency`, `description` FROM `Request`;";
+                string query = "SELECT `id_request`, `type_id`, `worker`, `Object`.`id_object` AS `object_id`, `Request`.`status` AS `status`, `urgency`, `description` FROM `Request` INNER JOIN `Object` ON `Object`.`id_object` = `Request`.`object_id` WHERE `Object`.`office_id` = @Office ;";
                 List<Models.Request> requests = new List<Models.Request>();
                 using(var command = new MySqlCommand(query, connection))
                 {
+                    command.Parameters.AddWithValue("@Office", office_id);
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         while (await reader.ReadAsync())
@@ -425,6 +502,45 @@ namespace edemBack.IFunction
                 return request;
             }
         }
+
+        //Get Requests for Worker
+        public static async Task<List<Models.Request>> getRequestsWorker(int worker, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                string query = "SELECT `Request`.`id_request`, `type_id`, `worker`, `object_id`, `status`, `urgency`, `description` FROM `Request` INNER JOIN `Request_Worker` ON `Request_Worker`.`request_id` = `Request`.`id_request` WHERE `Request_Worker`.`worker_id` = @Worker ;";
+                List<Models.Request> requests = new List<Models.Request>();
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Worker", worker);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            Models.Request oneRequest = new Models.Request
+                            {
+                                Request_Id = int.Parse(reader[0].ToString()!),
+                                Type_Work = int.Parse(reader[1].ToString()!).ToString(),
+                                Worker = bool.Parse(reader[2].ToString()!),
+                                Object_Id = int.Parse(reader[3].ToString()!),
+                                Status = int.Parse(reader[4].ToString()!).ToString(),
+                                Urgency = bool.Parse(reader[5].ToString()!),
+                                Description = reader[6].ToString()!,
+                                Photos = null,
+                                Roles_Id = null,
+                                Workers_Request = null
+                            };
+                            requests.Add(oneRequest);
+                        }
+                    }
+                }
+                await connection.CloseAsync();
+                return requests;
+            }
+        }
+
         //Get Booking
         public static async Task<List<Models.Booking>> getAllBooking(IDatabaseFactory factory)
         {
@@ -455,7 +571,7 @@ namespace edemBack.IFunction
                 return booking;
             }            
         }
-
+        //Get Requests for worker
         public static async Task<List<int>>? getAllRequestWorker(int worker, IDatabaseFactory factory)
         {
             var database = factory.Create();
@@ -477,6 +593,38 @@ namespace edemBack.IFunction
                 }
                 await connection.CloseAsync();
                 return requests;
+            }
+        }
+
+        //Get Booking for Worker
+        public static async Task<List<Models.Booking>> getBookingOffice(int office, IDatabaseFactory factory)
+        {
+            var database = factory.Create();
+            using (var connection = database.CreateNewConnection())
+            {
+                await connection.OpenAsync();
+                List<Models.Booking> booking = new List<Models.Booking>();
+                string query = @"SELECT `id_booking`, `Object`.`id_object` AS `object_id`, `date_start`, `date_end`, `Status`.`name` as `status` FROM `Object_Booking` INNER JOIN `Status` ON `Object_Booking`.`status` = `Status`.`id_status` INNER JOIN `Object` ON `Object`.`id_object` = `Object_Booking`.`object_id` WHERE `Object`.`office_id` = @Office;";
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Office", office);
+                    var reader = await command.ExecuteReaderAsync();
+
+                    while (await reader.ReadAsync())
+                    {
+                        Models.Booking oneBooking = new Models.Booking
+                        {
+                            Id_Booking = int.Parse(reader[0].ToString()!),
+                            Object_id = int.Parse(reader[1].ToString()!),
+                            Date_Start = DateTime.Parse(reader[2].ToString()!),
+                            Date_End = DateTime.Parse(reader[3].ToString()!),
+                            Status = reader[4].ToString()!
+                        };
+                        booking.Add(oneBooking);
+                    }
+                }
+                await connection.CloseAsync();
+                return booking;
             }
         }
 

@@ -23,6 +23,7 @@ namespace edemBack
             var builder = WebApplication.CreateBuilder(args);
 
             builder.WebHost.UseUrls("http://+:5077");
+            builder.WebHost.UseUrls("https://+:7159");
             builder.Configuration.AddJsonFile("Params.json", optional: true, reloadOnChange: true);
 
             builder.Services.AddCors(options =>
@@ -35,22 +36,63 @@ namespace edemBack
                 });
             });
 
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
                 .AddCookie(options =>
                 {
                     options.Cookie.Name = "SessionUser";
                     options.Cookie.HttpOnly = true;
-                    //options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                     options.Cookie.SameSite = SameSiteMode.Strict;
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
                     options.SlidingExpiration = true;
                     options.LoginPath = "/";
                     options.LogoutPath = "/";
+
+                    // Если неавторизован (не вошёл в систему) ? 401
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.ContentType = "application/json";
+                        return context.Response.WriteAsync("{\"error\": \"Unauthorized\"}");
+                    };
+
+                    // Если авторизован, но нет прав (роль, policy) ? 403
+                    options.Events.OnRedirectToAccessDenied = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        context.Response.ContentType = "application/json";
+                        return context.Response.WriteAsync("{\"error\": \"Forbidden\"}");
+                    };
                 });
             builder.Services.AddAuthorization(options =>
             {
+                options.AddPolicy("levelAll", policy =>
+                    policy.RequireClaim("Level", "1", "2", "3", "4"));
                 options.AddPolicy("level1to2", policy =>
                     policy.RequireClaim("Level", "1", "2"));
+                options.AddPolicy("level1", policy =>
+                    policy.RequireClaim("Level", "1"));
+                options.AddPolicy("level2", policy =>
+                    policy.RequireClaim("Level", "2"));
+                options.AddPolicy("level1to3", policy =>
+                    policy.RequireClaim("Level", "1", "2", "3"));
+                options.AddPolicy("level3", policy =>
+                    policy.RequireClaim("Level", "3"));
+                options.AddPolicy("level2to3", policy =>
+                    policy.RequireClaim("Level", "2", "3"));
+                options.AddPolicy("level4", policy =>
+                    policy.RequireClaim("Level", "4"));
+                options.AddPolicy("level3to4", policy =>
+                    policy.RequireClaim("Level", "3", "4"));
+                options.AddPolicy("Operator", policy => 
+                { 
+                    policy.RequireClaim("Role", "Оператор");
+                    policy.RequireClaim("Level", "3");
+                });
             });
 
             builder.Services.AddSingleton<IDatabaseFactory, DatabaseFactory>();
@@ -91,7 +133,6 @@ namespace edemBack
             var app = builder.Build();
             app.UseCors("AllowAll");
             app.UseStaticFiles();
-            app.UsePathBase("/api");
 
             app.UseRouting();
             app.UseAuthentication();
@@ -100,7 +141,7 @@ namespace edemBack
             app.UseMiddleware<RequestLoggingMiddleware>();
 
             //Auth Проверил с хэшированием на одном пользователе
-            app.MapPost("/Auth", async (HttpContext ctx, AuthRequest request, IDatabaseFactory factory) =>
+            app.MapPost("/api/Auth", async (HttpContext ctx, AuthRequest request, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(request);
                 var validationResults = new List<ValidationResult>();
@@ -129,6 +170,7 @@ namespace edemBack
                             new Claim(ClaimTypes.NameIdentifier, worker.Id.ToString()),
                             new Claim(ClaimTypes.Name, worker.Surname + " " + worker.Name + " " + worker.Fathername),
                             new Claim(ClaimTypes.Role, role.Name.ToString()!),
+                            new Claim("Office", worker.Id_Office.ToString()),
                             new Claim("Level", role.LevelImportant.ToString()!)
                         };
                         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -146,6 +188,7 @@ namespace edemBack
                             CookieAuthenticationDefaults.AuthenticationScheme,
                             principal,
                             props);
+                        worker.Password = null;
                         return Results.Ok(worker);
                     }
                     catch (Exception ex)
@@ -169,6 +212,8 @@ namespace edemBack
                 .Produces<(int, List<Models.Role>?)>(StatusCodes.Status202Accepted)
                 .Produces(StatusCodes.Status400BadRequest);
 
+            var apiGroup = app.MapGroup("/api").RequireAuthorization();
+
             var endpointTypes = Assembly.GetExecutingAssembly()
                                         .GetTypes()
                                         .Where(t => typeof(IEndpoint).IsAssignableFrom(t) && !t.IsInterface);
@@ -176,21 +221,8 @@ namespace edemBack
             foreach (var type in endpointTypes)
             {
                 var instance = Activator.CreateInstance(type) as IEndpoint;
-                instance?.MapEndpoints(app);
+                instance?.MapEndpoints(apiGroup);
             }
-
-            app.MapGet("/debag/claims", (HttpContext ctx) =>
-                Results.Ok(ctx.User.Claims.Select(c => (c.Type, c.Value)))
-            );
-
-            app.MapGet("/debug/claims", (HttpContext ctx) =>
-            {
-                if (!ctx.User.Identity.IsAuthenticated)
-                    return Results.Unauthorized();
-                return Results.Ok(ctx.User.Claims
-                    .Select(c => new { c.Type, c.Value }));
-            })
-                .RequireAuthorization();  // чтобы сюда шли только после SignIn
 
 
             if (app.Environment.IsDevelopment())

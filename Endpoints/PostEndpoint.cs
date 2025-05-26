@@ -1,14 +1,15 @@
 ﻿using edemBack.IFunction;
+using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 
 namespace edemBack.Endpoints
 {
     public class PostEndpoint: IFunction.IEndpoint, ICreateFunction
     {
-        public void MapEndpoints(WebApplication app)
+        public void MapEndpoints(IEndpointRouteBuilder app)
         {
             //Create Object
-            app.MapPost("/Object", async (Models.Object _object, IDatabaseFactory factory) =>
+            app.MapPost("/Object", [Authorize(Policy = "level1to2")] async (Models.Object _object, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(_object);
                 var validationResults = new List<ValidationResult>();
@@ -44,7 +45,7 @@ namespace edemBack.Endpoints
             //Create Object With Photos
 
             //Create Worker
-            app.MapPost("/Worker", async (Models.Worker worker, IDatabaseFactory factory) =>
+            app.MapPost("/Worker", [Authorize(Policy = "level2")] async (Models.Worker worker, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(worker);
                 var validationResults = new List<ValidationResult>();
@@ -78,7 +79,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Office
-            app.MapPost("/Office", async (Models.Office office, IDatabaseFactory factory) =>
+            app.MapPost("/Office", [Authorize(Policy = "level1")] async (Models.Office office, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(office);
                 var validationResults = new List<ValidationResult>();
@@ -112,7 +113,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Role
-            app.MapPost("/Role", async (Models.Role role, IDatabaseFactory factory) =>
+            app.MapPost("/Role", [Authorize(Policy = "level1to2")] async (Models.Role role, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(role);
                 var validationResults = new List<ValidationResult>();
@@ -146,7 +147,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Request
-            app.MapPost("/Request", async (Models.Request request, IDatabaseFactory factory) =>
+            app.MapPost("/Request", [Authorize(Policy = "level3")] async (Models.Request request, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(request);
                 var validationResults = new List<ValidationResult>();
@@ -180,7 +181,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Booking
-            app.MapPost("/Booking", async (Models.Booking booking, IDatabaseFactory factory) =>
+            app.MapPost("/Booking", [Authorize(Policy = "Operator")] async (Models.Booking booking, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(booking);
                 var validationResults = new List<ValidationResult>();
@@ -217,7 +218,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status201Created)
                 .Produces(StatusCodes.Status400BadRequest);
             //Create Additional (А нужно ли оно? По факту, оно работает при создании объекта)
-            app.MapPost("/Additionally", async (List<Models.Additionally> additionally, IDatabaseFactory factory) =>
+            app.MapPost("/Additionally", [Authorize(Policy = "level1to2")] async (List<Models.Additionally> additionally, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(additionally);
                 var validationResults = new List<ValidationResult>();
@@ -254,7 +255,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Type Work
-            app.MapPost("/TypeWork", async (Models.TypeWork type, IDatabaseFactory factory) =>
+            app.MapPost("/TypeWork", [Authorize(Policy = "level1to2")] async (Models.TypeWork type, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(type);
                 var validationResults = new List<ValidationResult>();
@@ -288,7 +289,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Status
-            app.MapPost("/Status", async (Models.Status status, IDatabaseFactory factory) =>
+            app.MapPost("/Status", [Authorize(Policy = "level1to2")] async (Models.Status status, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(status);
                 var validationResults = new List<ValidationResult>();
@@ -320,7 +321,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Status
-            app.MapPost("/Status_Request", async (Models.Status_Request status, IDatabaseFactory factory) =>
+            app.MapPost("/Status_Request", [Authorize(Policy = "level1to2")] async (Models.Status_Request status, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(status);
                 var validationResults = new List<ValidationResult>();
@@ -352,7 +353,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Work_role
-            app.MapPost("Work_Role", async (Models.Work_Role work_role, IDatabaseFactory factory) =>
+            app.MapPost("Work_Role", [Authorize(Policy = "level1to2")] async (Models.Work_Role work_role, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(work_role);
                 var validationResults = new List<ValidationResult>();
@@ -386,7 +387,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Add parametr Role
-            app.MapPost("Add_Parametrs_Role", async (Models.Add_Parametrs_Role parametr, IDatabaseFactory factory) =>
+            app.MapPost("Add_Parametrs_Role", [Authorize(Policy = "level1to2")] async (Models.Add_Parametrs_Role parametr, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(parametr);
                 var validationResults = new List<ValidationResult>();
@@ -420,7 +421,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Create Add Worker for Request
-            app.MapPost("/RequestWorker", async (Models.RequestWorker requestWorker, IDatabaseFactory factory) =>
+            app.MapPost("/RequestWorker", [Authorize(Policy = "level3")] async (Models.RequestWorker requestWorker, IDatabaseFactory factory) =>
             {
                 var validationContext = new ValidationContext(requestWorker);
                 var validationResults = new List<ValidationResult>();

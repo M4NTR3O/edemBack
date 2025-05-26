@@ -1,13 +1,14 @@
 ﻿using edemBack.IFunction;
+using Microsoft.AspNetCore.Authorization;
 
 namespace edemBack.Endpoints
 {
     public class DeleteEndpoint: IFunction.IEndpoint, IDeleteFunctions
     {
-        public void MapEndpoints(WebApplication app)
+        public void MapEndpoints(IEndpointRouteBuilder app)
         {
             //Delete Worker
-            app.MapDelete("/Worker/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Worker/{id:int}", [Authorize(Policy = "level2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -28,7 +29,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Object
-            app.MapDelete("/Object/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Object/{id:int}", [Authorize(Policy = "level1to2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -49,7 +50,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Booking
-            app.MapDelete("/Booking/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Booking/{id:int}", [Authorize(Policy = "level3")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -70,7 +71,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Office
-            app.MapDelete("/Office/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Office/{id:int}", [Authorize(Policy = "level1")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -91,7 +92,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Request
-            app.MapDelete("/Request/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Request/{id:int}", [Authorize(Policy = "level3")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -112,7 +113,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Role
-            app.MapDelete("/Role/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Role/{id:int}", [Authorize(Policy = "level1to2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -133,7 +134,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Status
-            app.MapDelete("/Status/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Status/{id:int}", [Authorize(Policy = "level1to2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -154,7 +155,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Status_Request
-            app.MapDelete("/Status_Request/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Status_Request/{id:int}", [Authorize(Policy = "level1to2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -175,7 +176,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Type_Work
-            app.MapDelete("/TypeWork/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/TypeWork/{id:int}", [Authorize(Policy = "level1to2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -196,7 +197,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete AddParametrRole
-            app.MapDelete("/Add_Parametr_Role/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Add_Parametr_Role/{id:int}", [Authorize(Policy = "level1to2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -217,7 +218,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete Work_Role
-            app.MapDelete("/Work_Role/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("/Work_Role/{id:int}", [Authorize(Policy = "level1to2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -238,7 +239,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Delete RequestWorker
-            app.MapDelete("RequestWorker/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapDelete("RequestWorker/{id:int}", [Authorize(Policy = "level3")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {

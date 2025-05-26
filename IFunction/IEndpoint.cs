@@ -2,6 +2,6 @@
 {
     public interface IEndpoint
     {
-        void MapEndpoints(WebApplication app);
+        void MapEndpoints(IEndpointRouteBuilder app);
     }
 }

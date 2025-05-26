@@ -1,14 +1,16 @@
 ﻿using edemBack.IFunction;
+using Microsoft.AspNetCore.Authorization;
 
 namespace edemBack.Endpoints
 {
     public class PatchEndpoint: IFunction.IEndpoint, IUpdateFunction
     {
-        public void MapEndpoints(WebApplication app)
+        public void MapEndpoints(IEndpointRouteBuilder app)
         {
             //Update Worker password - check on security don't release
-            app.MapPatch("/UpdatePassword/{id:int}", async (int id, string password, IDatabaseFactory factory) =>
+            app.MapPatch("/UpdatePassword/{id:int}", [Authorize(Policy = "levelAll")] async (int id, string password, IDatabaseFactory factory) =>
             {
+                //Change TG BOT and Email
                 await IUpdateFunction.updatePassword(id, password, factory);
                 return Results.NoContent();
             })
@@ -22,7 +24,7 @@ namespace edemBack.Endpoints
                 });
 
             //Update Status Request
-            app.MapPatch("/ChangeStatusRequest/{id_request:int}", async (int id_request, string status, IDatabaseFactory factory) =>
+            app.MapPatch("/ChangeStatusRequest/{id_request:int}", [Authorize(Policy = "level3")] async (int id_request, string status, IDatabaseFactory factory) =>
             {
                 {
                     try
@@ -48,7 +50,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Status Boocking
-            app.MapPatch("/ChangeStatusBooking/{id_booking:int}", async (int id_booking, string status, IDatabaseFactory factory) =>
+            app.MapPatch("/ChangeStatusBooking/{id_booking:int}", [Authorize(Policy = "level3")] async (int id_booking, string status, IDatabaseFactory factory) =>
             {
                 {
                     try
@@ -74,7 +76,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest);
 
             //Update Status Object
-            app.MapPatch("/ChangeStatusObject/{id_object:int}", async (int id_object, string status, IDatabaseFactory factory) =>
+            app.MapPatch("/ChangeStatusObject/{id_object:int}", [Authorize(Policy = "level3")] async (int id_object, string status, IDatabaseFactory factory) =>
             {
                 {
                     try

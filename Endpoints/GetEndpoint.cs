@@ -1,14 +1,15 @@
 ﻿using edemBack.IFunction;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace edemBack.Endpoints
 {
     public class GetEndpoint: IFunction.IEndpoint, IGetFunction
     {
-        public void MapEndpoints(WebApplication app)
+        public void MapEndpoints(IEndpointRouteBuilder app)
         {
             //GetAllObject and with filter
-            app.MapGet("/Objects", async (HttpRequest request, IDatabaseFactory factory) =>
+            app.MapGet("/Objects", [Authorize(Policy = "level1to2")] async (HttpRequest request, IDatabaseFactory factory) =>
             {
                 //filter parametrs
                 bool kitchen = false;
@@ -75,7 +76,7 @@ namespace edemBack.Endpoints
                 .WithOpenApi(op =>
                 {
                     op.Summary = "Получить все объекты";
-                    op.Description = "Возвращает все объекты, с возможностью фильтрации по офису, количеству комнат, наличию кухни и балкона.";
+                    op.Description = "Возвращает все объекты, с возможностью фильтрации по офису, количеству комнат, наличию кухни и балкона. Уровень доступа не выше 2";
 
                     op.Parameters = new List<Microsoft.OpenApi.Models.OpenApiParameter>
                         {
@@ -118,8 +119,101 @@ namespace edemBack.Endpoints
                 .Produces<List<Models.Object>>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status204NoContent);
 
+            //GetAllObject and with filter
+            app.MapGet("/Objects/Worker", [Authorize(Policy = "level2to3")] async (HttpContext ctx, HttpRequest request, IDatabaseFactory factory) =>
+            {
+                //filter parametrs
+                bool kitchen = false;
+                int office = Convert.ToInt32(ctx.User.FindFirst("Office").Value?.ToString());
+                bool balcony = false;
+                int rooms = 0;
+                //list item
+                var objects = await IGetFunction.getObjectsWorker(office, factory);
+                var objectsQuery = objects.AsQueryable();
+                if (objects.Count == 0)
+                {
+                    return Results.NoContent();
+                }
+                //filters
+                //kitchen
+                if (request.Query.ContainsKey("Kitchen"))
+                {
+                    var parsedKitchen = bool.TryParse(request.Query["Kitchen"], out kitchen);
+                    if (parsedKitchen)
+                    {
+                        objectsQuery = objectsQuery.Where(
+                            x => x.Kitchen == kitchen);
+                    }
+                }
+                //balcony
+                if (request.Query.ContainsKey("Balcony"))
+                {
+                    var parsedBalcony = bool.TryParse(request.Query["Balcony"], out balcony);
+                    if (parsedBalcony)
+                    {
+                        objectsQuery = objectsQuery.Where(
+                            x => x.Balcony == balcony);
+                    }
+                }
+                //rooms
+                if (request.Query.ContainsKey("Rooms"))
+                {
+                    var parsedRooms = int.TryParse(request.Query["Rooms"], out rooms);
+                    if (parsedRooms)
+                    {
+                        objectsQuery = objectsQuery.Where(
+                            x => x.Rooms == rooms);
+                    }
+                }
+                var result = objectsQuery.ToList();
+                if (result.Count == 0)
+                {
+                    return Results.NoContent();
+                }
+                return Results.Ok(result);
+            })
+                .WithName("GetObjectsWorker")
+                .WithTags("Object", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить все объекты для работника";
+                    op.Description = "Возвращает все объекты, с возможностью фильтрации по количеству комнат, наличию кухни и балкона. Уровень доступа не выше 2";
+
+                    op.Parameters = new List<Microsoft.OpenApi.Models.OpenApiParameter>
+                        {
+                            new Microsoft.OpenApi.Models.OpenApiParameter
+                            {
+                                Name = "Rooms",
+                                In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                                Required = false,
+                                Description = "Количество комнат в объекте для фильтрации объектов по количеству комнат",
+                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
+                            },
+                            new Microsoft.OpenApi.Models.OpenApiParameter
+                            {
+                                Name = "Balcony",
+                                In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                                Required = false,
+                                Description = "Наличие балкона для фильтрации объектов по раличию балкона",
+                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "boolean" }
+                            },
+                            new Microsoft.OpenApi.Models.OpenApiParameter
+                            {
+                                Name = "Kitchen",
+                                In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                                Required = false,
+                                Description = "Наличие кухни для фильтрации объектов по наличию кухни",
+                                Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "boolean" }
+                            }
+                        };
+
+                    return op;
+                })
+                .Produces<List<Models.Object>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status204NoContent);
+
             //Get one object with ID
-            app.MapGet("/Object/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapGet("/Object/{id:int}",[Authorize(Policy = "levelAll")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -140,7 +234,7 @@ namespace edemBack.Endpoints
                 .WithOpenApi(op =>
                 {
                     op.Summary = "Получить объект по его ID";
-                    op.Description = "Получение объекта по его идентификатору";
+                    op.Description = "Получение объекта по его идентификатору. Доступно при авторизации";
                     op.Parameters[0].Description = "Идентификатор объекта (Натуральное число)";
                     return op;
                 })
@@ -216,7 +310,7 @@ namespace edemBack.Endpoints
                 .WithOpenApi(op =>
                 {
                     op.Summary = "Получить список работников";
-                    op.Description = "Возвращает всех работников, с возможностью фильтрации по офису и роли.";
+                    op.Description = "Возвращает всех работников, с возможностью фильтрации по офису и роли. Уровень доступа не выше 2";
 
                     op.Parameters = new List<Microsoft.OpenApi.Models.OpenApiParameter>
                 {
@@ -243,8 +337,85 @@ namespace edemBack.Endpoints
                 .Produces<List<Models.Worker>>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status204NoContent);
 
+            //Get All Workers for worker
+            app.MapGet("/Workers/Worker", [Authorize(Policy = "level1to2")] async (HttpContext ctx, HttpRequest request, IDatabaseFactory factory) =>
+            {
+                //parametrs filter
+                int id_office = Convert.ToInt32(ctx.User.FindFirst("Office").Value?.ToString()); ;
+                List<int> id_roles = new List<int>();
+                int id_role = 0;
+                //list item
+                var workers = await IGetFunction.getWorkersWorker(id_office, factory);
+                if (workers.Count == 0)
+                {
+                    return Results.NoContent();
+                }
+                var workersQuery = workers.AsQueryable();
+                //filters
+                //role_id
+                if (request.Query.ContainsKey("Role"))
+                {
+                    Console.WriteLine(request.Query["Role"].Count);
+                    if (request.Query["Role"].Count > 1)
+                    {
+                        foreach (var id in request.Query["Role"])
+                        {
+                            if (int.TryParse(id, out int parsedId))
+                            {
+                                id_roles.Add(parsedId);
+                            }
+
+                        }
+                        if (id_roles.Count > 0)
+                        {
+                            workersQuery = workersQuery.Where(x => id_roles.Contains(x.Id_Role));
+                        }
+                    }
+                    else
+                    {
+                        var parsedRoleId = int.TryParse(request.Query["Role"], out id_role);
+                        if (parsedRoleId)
+                        {
+                            workersQuery = workersQuery.Where(
+                                x => x.Id_Role == id_role);
+                        }
+                    }
+                }
+                //result list
+                var result = workersQuery.ToList();
+                //check empty list
+                if (result.Count == 0)
+                {
+                    return Results.NoContent();
+                }
+                return Results.Ok(result);
+            })
+                .WithName("GetWorkersForWorker")
+                .WithTags("Worker", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить список работников для сотрудника";
+                    op.Description = "Возвращает всех работников, с возможностью фильтрации по офису и роли. Уровень доступа не выше 2";
+
+                    op.Parameters = new List<Microsoft.OpenApi.Models.OpenApiParameter>
+                {
+                    new Microsoft.OpenApi.Models.OpenApiParameter
+                    {
+                        Name = "Role",
+                        In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                        Required = false,
+                        Description = "ID роли для фильтрации работников по роли",
+                        Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
+                    }
+                };
+
+                    return op;
+                })
+                .Produces<List<Models.Worker>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status204NoContent);
+
             //Get One Worker with ID //Подумать о необходимости возвращать нехэшированный пароль
-            app.MapGet("/Worker/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapGet("/Worker/{id:int}", [Authorize(Policy = "level1to2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -274,18 +445,18 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get All Requests
-            app.MapGet("/Requests", async (HttpRequest request, IDatabaseFactory factory) =>
+            app.MapGet("/Requests",[Authorize(Policy = "level3")] async (HttpContext ctx, HttpRequest request, IDatabaseFactory factory) =>
             {
                 //parametrs filter (подумать над office_id)
                 int object_id = -1;
                 bool urgency = false;
                 string status = "-1";
                 bool text_type = false;
-                int office_id = -1;
                 bool text_status = false;
+                int office_id = Convert.ToInt32(ctx.User.FindFirst("Office")?.Value);
                 int worker = -1;
                 //list item
-                List<Models.Request> requests = await IGetFunction.getAllRequest(factory);
+                List<Models.Request> requests = await IGetFunction.getAllRequest(office_id, factory);
 
                 if (requests.Count == 0)
                 {
@@ -344,18 +515,6 @@ namespace edemBack.Endpoints
                     {
                         requestsQuery = requestsQuery.Where(
                             x => x.Object_Id == object_id);
-                    }
-                }
-                //office_id
-                if (request.Query.ContainsKey("Office"))
-                {
-                    var parsedOffice = int.TryParse(request.Query["Office"], out office_id);
-                    if (parsedOffice)
-                    {
-                        var objects = (await IGetFunction.getAllObject(factory)).AsQueryable().Where(
-                            x => x.Office_Id == office_id).Select(x => x.Id).ToList();
-                        requestsQuery = requestsQuery.Where(
-                            x => objects.Contains(x.Object_Id));
                     }
                 }
                 //Worker
@@ -437,14 +596,6 @@ namespace edemBack.Endpoints
                             Required = false,
                             Description = "Идентификатор работника, для которого выводятся заявки",
                             Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
-                        },
-                        new Microsoft.OpenApi.Models.OpenApiParameter
-                        {
-                            Name = "Office",
-                            In = Microsoft.OpenApi.Models.ParameterLocation.Query,
-                            Required = false,
-                            Description = "Идентификатор офиса, к которому прикреплены заявки",
-                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "integer" }
                         }
                     };
 
@@ -454,7 +605,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get One Request
-            app.MapGet("/Request/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapGet("/Request/{id:int}", [Authorize(Policy = "level3to4")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -483,8 +634,30 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status204NoContent);
 
+            app.MapGet("/Requests/Worker", [Authorize(Policy = "level4")] async (HttpContext ctx, IDatabaseFactory factory) =>
+            {
+                int id = Convert.ToInt32(ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                var requests = await IGetFunction.getRequestsWorker(id, factory);
+                if (requests.Count == 0)
+                {
+                    return Results.NoContent();
+                }
+                return Results.Ok(requests);
+            })
+                .WithName("GetRequestForWorker")
+                .WithTags("Request", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить заявку по ID";
+                    op.Description = "Получение заявки для работника (данные из куки)";
+                    return op;
+                })
+                .Produces<Models.Request>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status204NoContent);
+
             //Get All BookingObject
-            app.MapGet("/Bookings", async (HttpRequest request, IDatabaseFactory factory) =>
+            app.MapGet("/Bookings", [Authorize(Policy = "level1to2")] async (HttpRequest request, IDatabaseFactory factory) =>
             {
                 //filter
                 int office_id = -1;
@@ -561,7 +734,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get One Booking
-            app.MapGet("/Booking/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapGet("/Booking/{id:int}", [Authorize(Policy = "level3")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -590,8 +763,10 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status204NoContent);
 
+
+            //ИЗМЕНИТЬ
             //Get One Booking date
-            app.MapGet("/BookingDate/{date}", async (DateTime date, IDatabaseFactory factory) =>
+            app.MapGet("/BookingDate/{date}", [Authorize(Policy = "level3")] async (DateTime date, IDatabaseFactory factory) =>
             {
                 var booking = await IGetFunction.getBookingForDate(date, factory);
                 if (booking == null)
@@ -615,8 +790,63 @@ namespace edemBack.Endpoints
                 .Produces<List<Models.Booking>>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status204NoContent);
 
+            //Get BookingObject For Worker
+            app.MapGet("/Bookings/Worker", [Authorize(Policy = "level3")] async (HttpContext ctx, HttpRequest request, IDatabaseFactory factory) =>
+            {
+                //filter
+                int office_id = Convert.ToInt32(ctx.User.FindFirst("Office").Value?.ToString());
+                DateTime date = DateTime.Now;
+                //list item
+                var bookingList = await IGetFunction.getBookingOffice(office_id, factory);
+                if (bookingList.Count == 0)
+                {
+                    return Results.NoContent();
+                }
+                var bookingQuery = bookingList.AsQueryable();
+                //filters
+                //Date
+                if (request.Query.ContainsKey("Date"))
+                {
+                    var parsedDate = DateTime.TryParse(request.Query["Date"], out date);
+                    if (parsedDate)
+                    {
+                        bookingQuery = bookingQuery.Where(
+                            x => x.Date_Start <= date && x.Date_End >= date);
+                    }
+                }
+                //result list
+                var result = bookingQuery.ToList();
+                //check empty list
+                if (result.Count == 0)
+                {
+                    return Results.NoContent();
+                }
+                return Results.Ok(result);
+            })
+                .WithName("GetBookingsWorker")
+                .WithTags("Booking", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить список бронирований для заданного работника";
+                    op.Description = "Возвращает все бронирования, с возможностью фильтрации по дате.";
+                    op.Parameters = new List<Microsoft.OpenApi.Models.OpenApiParameter> {
+                        new Microsoft.OpenApi.Models.OpenApiParameter
+                        {
+                            Name = "Date",
+                            In = Microsoft.OpenApi.Models.ParameterLocation.Query,
+                            Required = false,
+                            Description = "Дата бронирования, при котором оно активно, для фильтрации бронирований по дате",
+                            Schema = new Microsoft.OpenApi.Models.OpenApiSchema { Type = "Date" }
+                        }
+                    };
+
+                    return op;
+                })
+                .Produces<List<Models.Booking>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status204NoContent);
+
             //Get All Roles 
-            app.MapGet("/Roles", async (IDatabaseFactory factory) =>
+            app.MapGet("/Roles", [Authorize(Policy = "level1to2")] async (IDatabaseFactory factory) =>
             {
                 var roles = await IGetFunction.getAllRoles(factory);
                 if (roles.Count == 0)
@@ -640,7 +870,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get One Role
-            app.MapGet("/Role/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapGet("/Role/{id:int}", [Authorize(Policy = "levelAll")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -667,7 +897,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get Not Importnat Roles
-            app.MapGet("/Roles/NoImportant", async (IDatabaseFactory factory) =>
+            app.MapGet("/Roles/NoImportant", [Authorize(Policy = "level3")] async (IDatabaseFactory factory) =>
             {
                 var roles = await IGetFunction.getNotImportnantRoles(factory);
                 if (roles.Count == 0)
@@ -691,7 +921,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get All Offices
-            app.MapGet("/Offices", async (IDatabaseFactory factory) =>
+            app.MapGet("/Offices", [Authorize(Policy = "level1to2")] async (IDatabaseFactory factory) =>
 
             {
                 var offices = await IGetFunction.getAllOffice(factory);
@@ -716,7 +946,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get One Offices
-            app.MapGet("/Office/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapGet("/Office/{id:int}", [Authorize(Policy = "level1to2")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -744,8 +974,30 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status204NoContent);
 
+            //Get Office Worker
+            app.MapGet("/Office/Worker", [Authorize(Policy = "levelAll")] async (HttpContext ctx, IDatabaseFactory factory) =>
+            {
+                int id_office = Convert.ToInt32(ctx.User.FindFirst("Office")?.Value);
+                var office = await IGetFunction.getOneOffice(id_office, factory);
+                if (office == null)
+                {
+                    return Results.NoContent();
+                }
+                return Results.Ok(office);
+            })
+                .WithName("GetOfficeForWorker")
+                .WithTags("Office", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить офис работника";
+                    op.Description = "Получить офис из данных работника";
+                    return op;
+                })
+                .Produces<List<Models.Office>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status204NoContent);
+
             //Get One Status
-            app.MapGet("/Status/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapGet("/Status/{id:int}", [Authorize(Policy = "level1to3")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
@@ -775,7 +1027,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get All Status
-            app.MapGet("/Status", async (IDatabaseFactory factory) =>
+            app.MapGet("/Status", [Authorize(Policy = "level1to3")] async (IDatabaseFactory factory) =>
             {
                 var status = await IGetFunction.getAllStatus(factory);
                 if (status.Count == 0)
@@ -799,11 +1051,11 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get One Status_Request
-            app.MapGet("/Status_Request/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapGet("/Status_Request/{id:int}", [Authorize(Policy = "level1to4")] async (int id, IDatabaseFactory factory) =>
             {
                 if (id < 1)
                 {
-                    return Results.BadRequest("Not natura integers id");
+                    return Results.BadRequest("Not natural integers id");
                 }
                 var status = await IGetFunction.getOneStatusRequest(id, factory);
                 if (status == null)
@@ -829,7 +1081,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get All Status_Request
-            app.MapGet("/Status_Request", async (IDatabaseFactory factory) =>
+            app.MapGet("/Status_Request", [Authorize(Policy = "level1to3")] async (IDatabaseFactory factory) =>
             {
                 var status = await IGetFunction.getAllStatusRequest(factory);
                 if (status.Count == 0)
@@ -853,7 +1105,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get Types Works
-            app.MapGet("/TypesWork", async (IDatabaseFactory factory) =>
+            app.MapGet("/TypesWork", [Authorize(Policy = "level1to3")] async (IDatabaseFactory factory) =>
             {
                 var typesWorks = await IGetFunction.getTypesWorks(factory);
                 if (typesWorks.Count == 0)
@@ -877,7 +1129,7 @@ namespace edemBack.Endpoints
                 .Produces(StatusCodes.Status204NoContent);
 
             //Get One Types Works
-            app.MapGet("/TypeWork/{id:int}", async (int id, IDatabaseFactory factory) =>
+            app.MapGet("/TypeWork/{id:int}", [Authorize(Policy = "level1to3")] async (int id, IDatabaseFactory factory) =>
             {
                 var typeWork = await IGetFunction.getOneTypesWorks(factory, id);
                 if (typeWork != null)
@@ -898,6 +1150,32 @@ namespace edemBack.Endpoints
                     return op;
                 })
                 .Produces<Models.TypeWork>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status204NoContent);
+
+            app.MapGet("/MyData", [Authorize(Policy = "levelAll")] async (HttpContext ctx, IDatabaseFactory factory) =>
+            {
+                int id = Convert.ToInt32(ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                var worker = await IGetFunction.getWorker(id, factory);
+                if (worker == null)
+                {
+                    return Results.NoContent();
+                }
+                else
+                {
+                    worker.Password = null;
+                    return Results.Ok(worker);
+                }
+            })
+                .WithName("GetDataWorker")
+                .WithTags("Worker", "GET")
+                .WithOpenApi(op =>
+                {
+                    op.Summary = "Получить работника по авторизации";
+                    op.Description = "Получение данных работника по данным авторизации";
+                    return op;
+                })
+                .Produces<Models.Worker>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status204NoContent);
         }
     }
